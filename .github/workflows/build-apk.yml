@@ -5,8 +5,6 @@ on:
     branches: [ "**" ]
     tags:
       - "v*"
-  pull_request:
-    branches: [ "**" ]
   workflow_dispatch:
 
 permissions:
@@ -20,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -39,14 +39,14 @@ jobs:
         id: prepare_apk
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION="${{ github.ref_name }}"
+            TAG_VER="${{ github.ref_name }}"
           else
-            VERSION="0.2.0"
+            TAG_VER="v0.2.0"
           fi
-          APK_NAME="woofish-${VERSION}.apk"
+          APK_NAME="woofish-${TAG_VER}.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "${APK_NAME}"
           echo "apk_name=${APK_NAME}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_ver=${TAG_VER}" >> $GITHUB_OUTPUT
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -55,12 +55,11 @@ jobs:
           path: ${{ steps.prepare_apk.outputs.apk_name }}
           if-no-files-found: error
 
-      - name: Create GitHub Release (On Tag Push)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "电子木鱼 Android ${{ steps.prepare_apk.outputs.version }}"
-          tag_name: ${{ github.ref_name }}
+          name: "电子木鱼 Android ${{ steps.prepare_apk.outputs.tag_ver }}"
+          tag_name: ${{ steps.prepare_apk.outputs.tag_ver }}
           files: ${{ steps.prepare_apk.outputs.apk_name }}
           generate_release_notes: true
           draft: false
