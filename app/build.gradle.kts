@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "woofish"
+    namespace = "com.woofish"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "woofish"
+        applicationId = "com.woofish"
         minSdk = 24
         targetSdk = 34
         versionCode = 2

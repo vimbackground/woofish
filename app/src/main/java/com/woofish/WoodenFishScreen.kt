@@ -1,4 +1,4 @@
-package woofish
+package com.woofish
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring

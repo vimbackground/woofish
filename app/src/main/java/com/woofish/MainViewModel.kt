@@ -1,4 +1,4 @@
-package woofish
+package com.woofish
 
 import android.app.Application
 import android.content.Context

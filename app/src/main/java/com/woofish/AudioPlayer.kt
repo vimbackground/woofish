@@ -1,4 +1,4 @@
-package woofish
+package com.woofish
 
 import android.content.Context
 import android.media.AudioAttributes

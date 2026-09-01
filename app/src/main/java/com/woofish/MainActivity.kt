@@ -1,4 +1,4 @@
-package woofish
+package com.woofish
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
