@@ -1,19 +1,20 @@
-package com.areschang.woodenfish.audio
+package woofish
 
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
 import android.os.Build
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import com.areschang.woodenfish.R
 
-class WoodenFishAudioPlayer(private val context: Context) {
+class AudioPlayer(private val context: Context) {
     private val soundPool: SoundPool
     private val soundIds = mutableListOf<Int>()
     private var bgmPlayer: MediaPlayer? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -36,6 +37,9 @@ class WoodenFishAudioPlayer(private val context: Context) {
 
         soundIds.add(soundPool.load(context, R.raw.sound_1, 1))
         soundIds.add(soundPool.load(context, R.raw.sound_2, 1))
+
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        wakeLock = powerManager?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WoodenFish::BgmWakeLock")
     }
 
     fun playKnock(soundIndex: Int) {
@@ -50,20 +54,25 @@ class WoodenFishAudioPlayer(private val context: Context) {
         }
     }
 
+    fun isBgmPlaying(): Boolean = bgmPlayer?.isPlaying == true
+
     fun toggleBgm(volume: Float): Boolean {
-        if (bgmPlayer == null) {
+        return if (bgmPlayer == null) {
             bgmPlayer = MediaPlayer.create(context, R.raw.bgm).apply {
                 isLooping = true
                 setVolume(volume, volume)
                 start()
             }
-            return true
+            wakeLock?.acquire(24 * 60 * 60 * 1000L) // 息屏保持后台播放
+            true
         } else {
-            return if (bgmPlayer?.isPlaying == true) {
+            if (bgmPlayer?.isPlaying == true) {
                 bgmPlayer?.pause()
+                if (wakeLock?.isHeld == true) wakeLock?.release()
                 false
             } else {
                 bgmPlayer?.start()
+                wakeLock?.acquire(24 * 60 * 60 * 1000L)
                 true
             }
         }
@@ -77,5 +86,6 @@ class WoodenFishAudioPlayer(private val context: Context) {
         soundPool.release()
         bgmPlayer?.release()
         bgmPlayer = null
+        if (wakeLock?.isHeld == true) wakeLock?.release()
     }
 }

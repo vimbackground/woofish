@@ -4,9 +4,19 @@
 
 ---
 
-## ✨ 功能特性
+## 📌 项目来源与致谢
+
+本项目重构自开源项目：[**WoodenFish (by Ares-Chang)**](https://github.com/ares-chang/wooden-fish)。
+
+原项目采用 SolidJS + Vite 开发，现已完全重构为基于 Kotlin + Jetpack Compose 的 Android 原生应用，并针对移动端手感、息屏体验和极简交互进行了全面升级。
+
+---
+
+## ✨ 核心特性
 
 - 🎯 **极致纯净**：无广告、无冗余外链、无任何操作提示，保留最纯粹的修行体验。
+- 🎨 **全新黑金质感图标**：重新设计了符合 Android Adaptive Icon 标准的黑金禅意自适应图标。
+- 🌙 **息屏 / 锁屏控制**：支持在手机息屏及锁屏通知栏直接**开关背景音乐**、**开启/关闭木鱼打击动效**以及**切换敲击音效**，无需频繁解锁手机。
 - 🔊 **多音效一键切换**：屏幕左上角提供【音效 1】与【音效 2】快速切换。
 - 🎵 **沉浸模式 (BGM)**：屏幕左上角可一键开启/暂停空灵背景音乐。
 - 👁️ **清屏模式**：屏幕右上角一键隐藏除木鱼以外的所有元素（计数与操作栏全隐藏）。
@@ -20,8 +30,9 @@
 ## 🛠️ 技术栈
 
 - **语言**：Kotlin 2.0
+- **代码结构**：极致短平路径 (`woofish/`)
 - **UI 框架**：Jetpack Compose (Material 3)
-- **音频引擎**：`SoundPool`（零延迟敲击） + `MediaPlayer`（BGM 循环）
+- **音频与后台引擎**：`SoundPool`（零延迟敲击） + `MediaPlayer`（BGM 循环） + `ForegroundService` / `WakeLock`（息屏后台常驻）
 - **触觉反馈**：`Vibrator` / `VibrationEffect`
 - **CI/CD 自动化**：GitHub Actions 自动构建与发布 Release
 

@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.areschang.woodenfish"
+    namespace = "woofish"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.areschang.woodenfish"
+        applicationId = "woofish"
         minSdk = 24
         targetSdk = 34
         versionCode = 2
@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.media)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

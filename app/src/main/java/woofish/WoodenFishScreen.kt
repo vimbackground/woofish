@@ -1,4 +1,4 @@
-package com.areschang.woodenfish.ui
+package woofish
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
@@ -28,8 +28,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.areschang.woodenfish.R
-import com.areschang.woodenfish.viewmodel.MainViewModel
 
 @Composable
 fun WoodenFishScreen(viewModel: MainViewModel) {
@@ -66,7 +64,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .background(Color(0xFF111111))
             .systemBarsPadding()
     ) {
-        // 顶部控制栏与计数器（清屏模式下隐藏）
         AnimatedVisibility(
             visible = !state.isZenMode,
             enter = fadeIn(),
@@ -78,13 +75,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 顶栏两端布局
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // ◀ 左上角：【音效切换】 + 【BGM开关】
+                    // 左上角：【音效切换】 + 【BGM开关】
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -116,12 +112,11 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         }
                     }
 
-                    // ▶ 右上角：【清屏】 + 【动效开关】 + 【调节】
+                    // 右上角：【清屏】 + 【动效开关】 + 【调节】
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. 清屏开关
                         IconButton(
                             onClick = { viewModel.toggleZenMode() },
                             modifier = Modifier.size(36.dp)
@@ -133,7 +128,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             )
                         }
 
-                        // 2. 木鱼物理打击动效开关
                         IconButton(
                             onClick = { viewModel.toggleAnimation() },
                             modifier = Modifier.size(36.dp)
@@ -145,7 +139,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             )
                         }
 
-                        // 3. 调节设置
                         IconButton(
                             onClick = { viewModel.toggleSettingsDialog(true) },
                             modifier = Modifier.size(36.dp)
@@ -161,7 +154,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(44.dp))
 
-                // 功德大计数
                 Text(
                     text = "${state.count}",
                     color = Color.White,
@@ -178,7 +170,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 清屏模式下的极简退出按键
         if (state.isZenMode) {
             IconButton(
                 onClick = { viewModel.toggleZenMode() },
@@ -194,7 +185,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 居中木鱼主体
         Image(
             painter = painterResource(id = R.drawable.ic_wooden_fish),
             contentDescription = "Wooden Fish",
@@ -215,7 +205,6 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
         )
 
-        // 调节弹窗
         if (state.showSettings) {
             SettingsDialog(
                 state = state,
