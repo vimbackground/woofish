@@ -23,13 +23,18 @@
 - **UI 框架**：Jetpack Compose (Material 3)
 - **音频引擎**：`SoundPool`（零延迟敲击） + `MediaPlayer`（BGM 循环）
 - **触觉反馈**：`Vibrator` / `VibrationEffect`
-- **CI/CD 自动化**：GitHub Actions 自动构建 APK
+- **CI/CD 自动化**：GitHub Actions 自动构建与发布 Release
 
 ---
 
-## 📲 如何获取 APK
+## 📲 发布与下载说明
 
-代码推送到 GitHub 仓库后，GitHub Actions 会自动编译生成 APK：
-1. 访问仓库顶部的 **Actions** 标签页。
-2. 点击最新的 **`Build Android APK`** 运行记录。
-3. 在底部的 **Artifacts** 区域下载 **`wooden-fish-debug-apk`** 即可。
+### 1. 自动打 Tag 发布新版本
+只需在本地创建并推送 Tag，GitHub Actions 就会自动编译并发布到 Releases：
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+### 2. 下载安装包
+在 GitHub 仓库主页右侧 **Releases** 栏目直接下载发布的 **`woofish-v0.2.0.apk`** 安装包。
