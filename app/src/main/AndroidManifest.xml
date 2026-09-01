@@ -3,11 +3,6 @@
 
     <!-- 震动权限 -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- 息屏/后台播放与通知控制权限 -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -27,17 +22,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- 息屏与锁屏常驻媒体控制服务 -->
-        <service
-            android:name=".MediaNotificationService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
-
-        <!-- 锁屏动作按钮广播接收器 -->
-        <receiver
-            android:name=".MediaActionReceiver"
-            android:exported="false" />
 
     </application>
 

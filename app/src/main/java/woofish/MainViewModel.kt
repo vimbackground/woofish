@@ -18,10 +18,6 @@ data class WoodenFishUiState(
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    companion object {
-        var instance: MainViewModel? = null
-    }
-
     private val audioPlayer = AudioPlayer(application)
     private val prefs = application.getSharedPreferences("wooden_fish_prefs", Context.MODE_PRIVATE)
 
@@ -30,46 +26,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             count = prefs.getLong("key_count", 0L),
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             soundIndex = prefs.getInt("key_sound_index", 0),
-            isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
-            isBgmPlaying = prefs.getBoolean("key_bgm_playing", false)
+            isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true)
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
-
-    init {
-        instance = this
-        // 启动/同步前台常驻服务以支持息屏控制
-        MediaNotificationService.updateService(application)
-    }
 
     fun onKnock() {
         audioPlayer.playKnock(_uiState.value.soundIndex)
         val newCount = _uiState.value.count + 1
         _uiState.value = _uiState.value.copy(count = newCount)
         prefs.edit().putLong("key_count", newCount).apply()
-        MediaNotificationService.updateService(getApplication())
     }
 
     fun toggleSoundEffect() {
         val nextIndex = if (_uiState.value.soundIndex == 0) 1 else 0
-        setSoundFromLockScreen(nextIndex)
+        _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
+        prefs.edit().putInt("key_sound_index", nextIndex).apply()
         audioPlayer.playKnock(nextIndex)
     }
 
-    fun setSoundFromLockScreen(index: Int) {
-        _uiState.value = _uiState.value.copy(soundIndex = index)
-        prefs.edit().putInt("key_sound_index", index).apply()
-        MediaNotificationService.updateService(getApplication())
-    }
-
     fun toggleBgm() {
-        val playing = audioPlayer.toggleBgm(_uiState.value.bgmVolume)
-        _uiState.value = _uiState.value.copy(isBgmPlaying = playing)
-        prefs.edit().putBoolean("key_bgm_playing", playing).apply()
-        MediaNotificationService.updateService(getApplication())
-    }
-
-    fun toggleBgmFromLockScreen() {
         val playing = audioPlayer.toggleBgm(_uiState.value.bgmVolume)
         _uiState.value = _uiState.value.copy(isBgmPlaying = playing)
     }
@@ -80,13 +56,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleAnimation() {
         val newEnabled = !_uiState.value.isAnimationEnabled
-        setAnimationFromLockScreen(newEnabled)
-    }
-
-    fun setAnimationFromLockScreen(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(isAnimationEnabled = enabled)
-        prefs.edit().putBoolean("key_animation_enabled", enabled).apply()
-        MediaNotificationService.updateService(getApplication())
+        _uiState.value = _uiState.value.copy(isAnimationEnabled = newEnabled)
+        prefs.edit().putBoolean("key_animation_enabled", newEnabled).apply()
     }
 
     fun toggleSettingsDialog(show: Boolean) {
@@ -102,12 +73,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun resetCount() {
         _uiState.value = _uiState.value.copy(count = 0L)
         prefs.edit().putLong("key_count", 0L).apply()
-        MediaNotificationService.updateService(getApplication())
     }
 
     override fun onCleared() {
         super.onCleared()
-        instance = null
         audioPlayer.release()
     }
 }

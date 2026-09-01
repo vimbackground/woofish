@@ -35,6 +35,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
+    // 物理击打动效受 isAnimationEnabled 开关控制
     val shouldAnimate = state.isAnimationEnabled && isPressed
 
     val scaleX by animateFloatAsState(
@@ -64,6 +65,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .background(Color(0xFF111111))
             .systemBarsPadding()
     ) {
+        // -------------------------------------------------------------
+        // 模式 1：正常显示模式（包含完整顶栏与功德大计数）
+        // -------------------------------------------------------------
         AnimatedVisibility(
             visible = !state.isZenMode,
             enter = fadeIn(),
@@ -75,6 +79,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // 顶栏布局
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,17 +122,19 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // 1. 进入清屏模式
                         IconButton(
                             onClick = { viewModel.toggleZenMode() },
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.VisibilityOff,
-                                contentDescription = "清屏",
+                                contentDescription = "进入清屏",
                                 tint = Color(0xFF999999)
                             )
                         }
 
+                        // 2. 木鱼物理打击动效开关
                         IconButton(
                             onClick = { viewModel.toggleAnimation() },
                             modifier = Modifier.size(36.dp)
@@ -139,6 +146,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             )
                         }
 
+                        // 3. 调节设置
                         IconButton(
                             onClick = { viewModel.toggleSettingsDialog(true) },
                             modifier = Modifier.size(36.dp)
@@ -154,6 +162,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(44.dp))
 
+                // 功德大计数
                 Text(
                     text = "${state.count}",
                     color = Color.White,
@@ -170,21 +179,65 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
         }
 
+        // -------------------------------------------------------------
+        // 模式 2：清屏状态（隐藏数字与文字，但仍保留 BGM 与木鱼动效极简控制）
+        // -------------------------------------------------------------
         if (state.isZenMode) {
-            IconButton(
-                onClick = { viewModel.toggleZenMode() },
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .align(Alignment.TopCenter),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Visibility,
-                    contentDescription = "退出清屏",
-                    tint = Color(0x33FFFFFF)
-                )
+                // 清屏状态下左上角：极简背景音乐开关
+                IconButton(
+                    onClick = { viewModel.toggleBgm() },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = "清屏BGM开关",
+                        tint = if (state.isBgmPlaying) Color(0xAAFFFFFF) else Color(0x33FFFFFF)
+                    )
+                }
+
+                // 清屏状态下右上角：极简木鱼动效开关 + 退出清屏按钮
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 木鱼动效开关
+                    IconButton(
+                        onClick = { viewModel.toggleAnimation() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (state.isAnimationEnabled) Icons.Filled.AutoAwesome else Icons.Outlined.AutoAwesome,
+                            contentDescription = "清屏动效开关",
+                            tint = if (state.isAnimationEnabled) Color(0xCCFFD54F) else Color(0x33FFFFFF)
+                        )
+                    }
+
+                    // 退出清屏按钮
+                    IconButton(
+                        onClick = { viewModel.toggleZenMode() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Visibility,
+                            contentDescription = "退出清屏",
+                            tint = Color(0x44FFFFFF)
+                        )
+                    }
+                }
             }
         }
 
+        // -------------------------------------------------------------
+        // 居中木鱼主体（敲击时根据动效开关产生物理受力弹性反馈）
+        // -------------------------------------------------------------
         Image(
             painter = painterResource(id = R.drawable.ic_wooden_fish),
             contentDescription = "Wooden Fish",
@@ -205,6 +258,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
         )
 
+        // 调节弹窗
         if (state.showSettings) {
             SettingsDialog(
                 state = state,
