@@ -44,9 +44,9 @@
 ### 1. 自动打 Tag 发布新版本
 只需在本地创建并推送 Tag，GitHub Actions 就会自动编译并发布到 Releases：
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 ### 2. 下载安装包
-在 GitHub 仓库主页右侧 **Releases** 栏目直接下载发布的 **`woofish-v0.2.0.apk`** 安装包。
+在 GitHub 仓库主页右侧 **Releases** 栏目直接下载发布的 **`woofish-v0.2.1.apk`** 安装包。
