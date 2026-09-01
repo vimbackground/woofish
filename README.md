@@ -1,60 +1,35 @@
-# 🐟WoodenFish
+# 🐟 电子木鱼 (Wooden Fish Android)
 
-<h3 align='center'>
-<a href="https://wfish.areschang.top/" target="_blank">Start Game</a>
-</h3>
+基于 **Kotlin + Jetpack Compose + Material 3** 构建的现代化、极简禅意风安卓电子木鱼应用。
 
-[![WoodenFish](./img/Snipaste_2022-11-21_19-44-23.png)](https://wfish.areschang.top/)
+---
 
-> 佛曰：“110010101110010 101000111111011 100111000000000 100111000000111 100111000001011 101110000110001 101001111101111 100111011100101 101001111101100 101010100100100 111100101011110 1001111110011001 101010011011111 1111110”
+## ✨ 功能特性
 
-## 信仰快餐
+- 🎯 **极致纯净**：无广告、无冗余外链、无任何操作提示，保留最纯粹的修行体验。
+- 🔊 **多音效一键切换**：屏幕左上角提供【音效 1】与【音效 2】快速切换。
+- 🎵 **沉浸模式 (BGM)**：屏幕左上角可一键开启/暂停空灵背景音乐。
+- 👁️ **清屏模式**：屏幕右上角一键隐藏除木鱼以外的所有元素（计数与操作栏全隐藏）。
+- ✨ **真实物理打击动效**：
+  - 模拟真实受力下压、挤压形变（拉伸 X，压缩 Y）与微倾斜，配合高阻尼弹簧回弹。
+  - 伴随原生马达轻微触觉震动反馈，支持在右上角一键开启/关闭。
+- ⚙️ **调节与统计清零**：右上角调节弹窗支持自由调整 BGM 音量以及一键清零已累积功德。
 
-敲电子木鱼，信虚拟神佛。你说我不虔诚？看我 99999+ 功德法池。
+---
 
-快餐化信仰，无关立场。是兄弟就点我，助我立场成佛！
+## 🛠️ 技术栈
 
-## 灵感来源
+- **语言**：Kotlin 2.0
+- **UI 框架**：Jetpack Compose (Material 3)
+- **音频引擎**：`SoundPool`（零延迟敲击） + `MediaPlayer`（BGM 循环）
+- **触觉反馈**：`Vibrator` / `VibrationEffect`
+- **CI/CD 自动化**：GitHub Actions 自动构建 APK
 
-借 埃隆·马斯克 优秀产品思想
-"copy [EWoodenFish](https://github.com/liuxiyuan-2022/EWoodenFish)"
+---
 
-感谢源作者开源出优秀 idea
+## 📲 如何获取 APK
 
-## 技术栈
-
-- ⚡️[SolidJS](https://github.com/solidjs/solid), [Vite 3](https://github.com/vitejs/vite), [pnpm](https://pnpm.io/), [ESBuild](https://github.com/evanw/esbuild) - 快快快快！
-
-- 🎨[UnoCSS](https://github.com/unocss/unocss) - 高性能且极具灵活性的即时原子化 CSS 引擎
-
-- 📦[unplugin-auto-import](https://github.com/antfu/unplugin-auto-import) - 直接使用 Composition API 等，无需导入
-
-- 😃 [各种图标集为你所用](https://github.com/antfu/unocss/tree/main/packages/preset-icons)
-
-- 🎧[Howler](https://github.com/goldfire/howler.js) - 现代网络音频库
-
-- 🦾 [TypeScript](https://github.com/microsoft/TypeScript), 超强壮
-
-- ☁️ 零配置部署 [Netlify](https://www.netlify.com/)
-
-初次尝试使用 [SolidJS](https://www.solidjs.com/) 开发，希望生态起来越完善。
-
-## 现在开始吧!
-
-克隆到本地
-
-```shell
-$ git clone https://github.com/Ares-Chang/wooden-fish.git
-$ cd wooden-fish
-$ npm install
-$ npm run dev
-```
-
-**强推一个小工具 [ni](https://github.com/antfu/ni) ，用上之后爱不释手。**
-
-```shell
-$ git clone git@github.com:Ares-Chang/wooden-fish.git
-$ cd wooden-fish
-$ ni
-$ nr dev
-```
+代码推送到 GitHub 仓库后，GitHub Actions 会自动编译生成 APK：
+1. 访问仓库顶部的 **Actions** 标签页。
+2. 点击最新的 **`Build Android APK`** 运行记录。
+3. 在底部的 **Artifacts** 区域下载 **`wooden-fish-debug-apk`** 即可。

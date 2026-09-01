@@ -1,11 +1,11 @@
-node_modules
-dist
-
-# Android build outputs & IDE caches
-.gradle/
-build/
-app/build/
 *.iml
-.idea/
-local.properties
+.gradle
+/local.properties
+/.idea/
 .DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
