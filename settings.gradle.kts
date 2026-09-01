@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WoodenFish"
+rootProject.name = "woofish"
 include(":app")

@@ -1,4 +1,4 @@
-# 🐟 电子木鱼 (Wooden Fish Android)
+# 🐟 woofish (电子木鱼)
 
 基于 **Kotlin + Jetpack Compose + Material 3** 构建的现代化、极简禅意风安卓电子木鱼应用。
 
@@ -30,8 +30,8 @@
 
 ## 🛠️ 技术栈
 
+- **项目名称**：`woofish`
 - **语言**：Kotlin 2.0
-- **代码结构**：极致短平路径 (`woofish/`)
 - **UI 框架**：Jetpack Compose (Material 3)
 - **音频引擎**：`SoundPool`（零延迟敲击） + `MediaPlayer`（BGM 循环）
 - **触觉反馈**：`Vibrator` / `VibrationEffect`
