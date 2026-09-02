@@ -3,9 +3,14 @@ package com.woofish
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 data class WoodenFishUiState(
     val count: Long = 0,
@@ -15,12 +20,18 @@ data class WoodenFishUiState(
     val isAnimationEnabled: Boolean = true,
     val isFullScreenTapEnabled: Boolean = false,
     val isZenMode: Boolean = false,
-    val showSettings: Boolean = false
+    val showSettings: Boolean = false,
+    val isAutoKnockEnabled: Boolean = false,
+    val autoKnockIntervalMs: Long = 1000L,
+    val showAutoKnockDialog: Boolean = false,
+    val knockTrigger: Long = 0L // 用于驱动木鱼受力下压回弹动画
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val audioPlayer = AudioPlayer(application)
     private val prefs = application.getSharedPreferences("wooden_fish_prefs", Context.MODE_PRIVATE)
+
+    private var autoKnockJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -28,7 +39,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             soundIndex = prefs.getInt("key_sound_index", 0),
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
-            isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", false)
+            isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", false),
+            autoKnockIntervalMs = prefs.getLong("key_auto_knock_interval", 1000L)
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -36,7 +48,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onKnock() {
         audioPlayer.playKnock(_uiState.value.soundIndex)
         val newCount = _uiState.value.count + 1
-        _uiState.value = _uiState.value.copy(count = newCount)
+        _uiState.value = _uiState.value.copy(
+            count = newCount,
+            knockTrigger = System.currentTimeMillis()
+        )
         prefs.edit().putLong("key_count", newCount).apply()
     }
 
@@ -71,6 +86,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(showSettings = show)
     }
 
+    fun toggleAutoKnockDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showAutoKnockDialog = show)
+    }
+
+    fun toggleAutoKnock(enabled: Boolean? = null) {
+        val nextState = enabled ?: !_uiState.value.isAutoKnockEnabled
+        _uiState.value = _uiState.value.copy(isAutoKnockEnabled = nextState)
+        
+        autoKnockJob?.cancel()
+        if (nextState) {
+            autoKnockJob = viewModelScope.launch {
+                while (isActive) {
+                    onKnock()
+                    delay(_uiState.value.autoKnockIntervalMs)
+                }
+            }
+        }
+    }
+
+    fun setAutoKnockInterval(intervalMs: Long) {
+        _uiState.value = _uiState.value.copy(autoKnockIntervalMs = intervalMs)
+        prefs.edit().putLong("key_auto_knock_interval", intervalMs).apply()
+        
+        // 如果正在自动敲击，重启协程以应用新频率
+        if (_uiState.value.isAutoKnockEnabled) {
+            toggleAutoKnock(true)
+        }
+    }
+
     fun updateBgmVolume(volume: Float) {
         audioPlayer.setBgmVolume(volume)
         _uiState.value = _uiState.value.copy(bgmVolume = volume)
@@ -84,6 +128,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
+        autoKnockJob?.cancel()
         audioPlayer.release()
     }
 }

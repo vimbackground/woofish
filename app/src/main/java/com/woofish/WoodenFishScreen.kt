@@ -16,7 +16,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
@@ -29,6 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 @Composable
 fun WoodenFishScreen(viewModel: MainViewModel) {
@@ -36,8 +39,18 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    // 物理击打动效受 isAnimationEnabled 开关控制
-    val shouldAnimate = state.isAnimationEnabled && isPressed
+    // 自动敲击时驱动木鱼下压回弹动画
+    var isAutoBouncing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.knockTrigger) {
+        if (state.knockTrigger > 0L) {
+            isAutoBouncing = true
+            delay(100)
+            isAutoBouncing = false
+        }
+    }
+
+    val isKnocked = isPressed || isAutoBouncing
+    val shouldAnimate = state.isAnimationEnabled && isKnocked
 
     val scaleX by animateFloatAsState(
         targetValue = if (shouldAnimate) 1.06f else 1.0f,
@@ -65,7 +78,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .fillMaxSize()
             .background(Color(0xFF111111))
             .systemBarsPadding()
-            // 当启用全屏点击有效模式时，点击屏幕任意空白区域均可敲击木鱼
+            // 当启用全屏敲击模式时，点击屏幕任意空白区域均可敲击木鱼
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -75,7 +88,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
     ) {
         // -------------------------------------------------------------
-        // 1. 顶栏全部保留：左侧【BGM + 动效 + 音效】，右侧仅保留【清屏 + 设置】
+        // 1. 顶栏全部保留：
+        // 左侧【BGM + 动效 + 音效】，右侧【清屏 + 自动敲击设置 + 软件设置】
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -132,7 +146,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // ▶ 右上角：仅保留【清屏开关】 + 【调节设置】两个按钮
+            // ▶ 右上角：【清屏开关】 + 【自动敲击设置】 + 【软件设置】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -149,14 +163,26 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 2. 调节设置按钮（位于最右侧）
+                // 2. 自动敲击木鱼独立调节按钮（位于清屏与设置之间）
+                IconButton(
+                    onClick = { viewModel.toggleAutoKnockDialog(true) },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (state.isAutoKnockEnabled) Icons.Filled.Timer else Icons.Outlined.Timer,
+                        contentDescription = "自动敲击设置",
+                        tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
+                    )
+                }
+
+                // 3. 软件设置按钮（固定位于最右侧）
                 IconButton(
                     onClick = { viewModel.toggleSettingsDialog(true) },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,
-                        contentDescription = "调节设置",
+                        contentDescription = "软件设置",
                         tint = Color(0xFF999999)
                     )
                 }
@@ -219,7 +245,19 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         )
 
         // -------------------------------------------------------------
-        // 4. 调节弹窗
+        // 4. 自动敲击调节弹窗
+        // -------------------------------------------------------------
+        if (state.showAutoKnockDialog) {
+            AutoKnockDialog(
+                state = state,
+                onDismiss = { viewModel.toggleAutoKnockDialog(false) },
+                onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
+                onIntervalChange = { viewModel.setAutoKnockInterval(it) }
+            )
+        }
+
+        // -------------------------------------------------------------
+        // 5. 软件设置弹窗
         // -------------------------------------------------------------
         if (state.showSettings) {
             SettingsDialog(

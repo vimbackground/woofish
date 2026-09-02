@@ -40,13 +40,17 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG_VER="${{ github.ref_name }}"
+            PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v0.3.0"
+            TAG_VER="v0.4.0"
+            PURE_VER="0.4.0"
           fi
-          APK_NAME="woofish-${TAG_VER}.apk"
+          # 生成名称为 woofish-0.4.0.apk 的安装包
+          APK_NAME="woofish-${PURE_VER}.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "${APK_NAME}"
           echo "apk_name=${APK_NAME}" >> $GITHUB_OUTPUT
           echo "tag_ver=${TAG_VER}" >> $GITHUB_OUTPUT
+          echo "pure_ver=${PURE_VER}" >> $GITHUB_OUTPUT
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -58,10 +62,11 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "电子木鱼 Android ${{ steps.prepare_apk.outputs.tag_ver }}"
+          name: "正念木鱼 Android ${{ steps.prepare_apk.outputs.tag_ver }}"
           tag_name: ${{ steps.prepare_apk.outputs.tag_ver }}
           files: ${{ steps.prepare_apk.outputs.apk_name }}
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: false
           draft: false
           prerelease: false
         env:
