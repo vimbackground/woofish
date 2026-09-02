@@ -65,9 +65,17 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .fillMaxSize()
             .background(Color(0xFF111111))
             .systemBarsPadding()
+            // 当启用全屏点击有效模式时，点击屏幕任意空白区域均可敲击木鱼
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = state.isFullScreenTapEnabled
+            ) {
+                viewModel.onKnock()
+            }
     ) {
         // -------------------------------------------------------------
-        // 1. 绝对静止顶栏：固定高度 60dp，垂直位置永不发生任何上下位移跳动
+        // 1. 顶栏全部保留：清屏与正常状态均完整常驻，设置位于最右侧
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -78,12 +86,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ◀ 左上角：【BGM 开关】 + 【木鱼动效开关】（绝对静止，零上下位移）
+            // ◀ 左上角：【BGM 开关】 + 【木鱼动效开关】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 背景音乐开关
+                // 1. 背景音乐开关
                 IconButton(
                     onClick = { viewModel.toggleBgm() },
                     modifier = Modifier.size(40.dp)
@@ -95,7 +103,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 木鱼物理打击动效开关
+                // 2. 木鱼物理打击动效开关
                 IconButton(
                     onClick = { viewModel.toggleAnimation() },
                     modifier = Modifier.size(40.dp)
@@ -108,52 +116,28 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // ▶ 右上角：【音效 1/2】 + 【调节设置】 + 【清屏开关】（仅纯淡入淡出/水平折叠，绝无上下颠簸）
+            // ▶ 右上角：【音效 1/2】 + 【清屏开关】 + 【设置按钮】(设置位于最右侧)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 音效胶囊 + 调节按钮：仅做水平展开与纯淡入淡出，高度完全锁定
-                AnimatedVisibility(
-                    visible = !state.isZenMode,
-                    enter = fadeIn(tween(150)) + expandHorizontally(expandFrom = Alignment.End),
-                    exit = fadeOut(tween(150)) + shrinkHorizontally(shrinkTowards = Alignment.End)
+                // 1. 音效切换胶囊按钮
+                Surface(
+                    onClick = { viewModel.toggleSoundEffect() },
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF222222),
+                    tonalElevation = 2.dp
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 音效切换胶囊按钮
-                        Surface(
-                            onClick = { viewModel.toggleSoundEffect() },
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFF222222),
-                            tonalElevation = 2.dp
-                        ) {
-                            Text(
-                                text = if (state.soundIndex == 0) "🔊 音效 1" else "🔊 音效 2",
-                                color = Color(0xFFCCCCCC),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
-                        }
-
-                        // 调节设置按钮
-                        IconButton(
-                            onClick = { viewModel.toggleSettingsDialog(true) },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "调节设置",
-                                tint = Color(0xFF999999)
-                            )
-                        }
-                    }
+                    Text(
+                        text = if (state.soundIndex == 0) "🔊 音效 1" else "🔊 音效 2",
+                        color = Color(0xFFCCCCCC),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
                 }
 
-                // 清屏开关按钮（锚定在右上角，垂直坐标始终静止）
+                // 2. 清屏开关按钮
                 IconButton(
                     onClick = { viewModel.toggleZenMode() },
                     modifier = Modifier.size(40.dp)
@@ -161,14 +145,26 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     Icon(
                         imageVector = if (state.isZenMode) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                         contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
-                        tint = if (state.isZenMode) Color(0x66FFFFFF) else Color(0xFF999999)
+                        tint = if (state.isZenMode) Color(0xFFFFD54F) else Color(0xFF999999)
+                    )
+                }
+
+                // 3. 调节设置按钮（位于顶栏最右侧）
+                IconButton(
+                    onClick = { viewModel.toggleSettingsDialog(true) },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "调节设置",
+                        tint = Color(0xFF999999)
                     )
                 }
             }
         }
 
         // -------------------------------------------------------------
-        // 2. 功德大计数与文字（纯透明度渐变淡入淡出，无任何高度伸缩导致的位移）
+        // 2. 功德大计数与文字（清屏状态下仅清除此处的数字与文字）
         // -------------------------------------------------------------
         AnimatedVisibility(
             visible = !state.isZenMode,
@@ -230,6 +226,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 state = state,
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
                 onVolumeChange = { viewModel.updateBgmVolume(it) },
+                onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
                 onResetCount = { viewModel.resetCount() }
             )
         }

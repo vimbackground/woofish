@@ -13,6 +13,7 @@ data class WoodenFishUiState(
     val bgmVolume: Float = 0.3f,
     val soundIndex: Int = 0,
     val isAnimationEnabled: Boolean = true,
+    val isFullScreenTapEnabled: Boolean = false,
     val isZenMode: Boolean = false,
     val showSettings: Boolean = false
 )
@@ -26,7 +27,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             count = prefs.getLong("key_count", 0L),
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             soundIndex = prefs.getInt("key_sound_index", 0),
-            isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true)
+            isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
+            isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", false)
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -58,6 +60,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val newEnabled = !_uiState.value.isAnimationEnabled
         _uiState.value = _uiState.value.copy(isAnimationEnabled = newEnabled)
         prefs.edit().putBoolean("key_animation_enabled", newEnabled).apply()
+    }
+
+    fun setFullScreenTap(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(isFullScreenTapEnabled = enabled)
+        prefs.edit().putBoolean("key_full_screen_tap", enabled).apply()
     }
 
     fun toggleSettingsDialog(show: Boolean) {

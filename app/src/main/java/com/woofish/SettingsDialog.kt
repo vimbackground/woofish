@@ -16,6 +16,7 @@ fun SettingsDialog(
     state: WoodenFishUiState,
     onDismiss: () -> Unit,
     onVolumeChange: (Float) -> Unit,
+    onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit
 ) {
     AlertDialog(
@@ -54,7 +55,29 @@ fun SettingsDialog(
                     )
                 }
 
-                // 2. 功德统计清零
+                // 2. 全屏点击有效模式
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "全屏敲击模式", fontSize = 15.sp, color = Color.White)
+                        Text(text = "点击屏幕任意区域均可敲击木鱼", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Switch(
+                        checked = state.isFullScreenTapEnabled,
+                        onCheckedChange = onFullScreenTapChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF4CAF50),
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = Color(0xFF333333)
+                        )
+                    )
+                }
+
+                // 3. 功德统计清零
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
