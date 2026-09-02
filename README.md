@@ -4,14 +4,6 @@
 
 ---
 
-## 📌 项目来源与致谢
-
-本项目重构自开源项目：[**WoodenFish (by Ares-Chang)**](https://github.com/ares-chang/wooden-fish)。
-
-原项目采用 SolidJS + Vite 开发，现已完全重构为基于 Kotlin + Jetpack Compose 的 Android 原生应用，并针对移动端手感、沉浸清屏体验和极简交互进行了全面升级。
-
----
-
 ## ✨ 核心特性
 
 - 🎯 **极致纯净**：桌面应用名称为“**正念木鱼**”，无广告、无冗余外链、无任何操作提示，保留最纯粹的修行体验。
@@ -45,14 +37,8 @@
 
 ---
 
-## 📲 发布与下载说明
+## 📌 项目来源与致谢
 
-### 1. 自动打 Tag 发布新版本
-只需在本地创建并推送 Tag，GitHub Actions 就会自动编译并发布到 Releases：
-```bash
-git tag v0.4.1
-git push origin v0.4.1 --force
-```
+本项目重构自开源项目：[**WoodenFish (by Ares-Chang)**](https://github.com/ares-chang/wooden-fish)。
 
-### 2. 下载安装包
-在 GitHub 仓库主页右侧 **Releases** 栏目直接下载发布的 **`woofish-0.4.1.apk`** 安装包。
+原项目采用 SolidJS + Vite 开发，现已完全重构为基于 Kotlin + Jetpack Compose 的 Android 原生应用，并针对移动端手感、沉浸清屏体验和极简交互进行了全面升级。
