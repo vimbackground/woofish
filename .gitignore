@@ -10,5 +10,6 @@
 .cxx
 local.properties
 
-# 本地专属 AI Agent 开发规范约束文件（不上传 GitHub）
+# 本地专属 AI Agent 开发规范与工具包（不上传 GitHub）
 Agent.md
+_Dev/
