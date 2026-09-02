@@ -75,7 +75,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
     ) {
         // -------------------------------------------------------------
-        // 1. 顶栏全部保留：清屏与正常状态均完整常驻，设置位于最右侧
+        // 1. 顶栏全部保留：左侧【BGM + 动效 + 音效】，右侧仅保留【清屏 + 设置】
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -86,7 +86,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ◀ 左上角：【BGM 开关】 + 【木鱼动效开关】
+            // ◀ 左上角：【BGM 开关】 + 【木鱼动效开关】 + 【音效选择】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -114,14 +114,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         tint = if (state.isAnimationEnabled) Color(0xFFFFD54F) else Color(0xFF555555)
                     )
                 }
-            }
 
-            // ▶ 右上角：【音效 1/2】 + 【清屏开关】 + 【设置按钮】(设置位于最右侧)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 1. 音效切换胶囊按钮
+                // 3. 音效切换胶囊按钮（位于动效开关右侧）
                 Surface(
                     onClick = { viewModel.toggleSoundEffect() },
                     shape = RoundedCornerShape(16.dp),
@@ -136,8 +130,14 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }
+            }
 
-                // 2. 清屏开关按钮
+            // ▶ 右上角：仅保留【清屏开关】 + 【调节设置】两个按钮
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 1. 清屏开关按钮
                 IconButton(
                     onClick = { viewModel.toggleZenMode() },
                     modifier = Modifier.size(40.dp)
@@ -149,7 +149,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 3. 调节设置按钮（位于顶栏最右侧）
+                // 2. 调节设置按钮（位于最右侧）
                 IconButton(
                     onClick = { viewModel.toggleSettingsDialog(true) },
                     modifier = Modifier.size(40.dp)
