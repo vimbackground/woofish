@@ -146,24 +146,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // ▶ 右上角：【清屏开关】 + 【自动敲击设置】 + 【软件设置】
+            // ▶ 右上角：【自动敲击设置】 + 【清屏开关】 + 【软件设置】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 清屏开关按钮
-                IconButton(
-                    onClick = { viewModel.toggleZenMode() },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = if (state.isZenMode) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                        contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
-                        tint = if (state.isZenMode) Color(0xFFFFD54F) else Color(0xFF999999)
-                    )
-                }
-
-                // 2. 自动敲击木鱼独立调节按钮（位于清屏与设置之间）
+                // 1. 自动敲击木鱼独立调节按钮
                 IconButton(
                     onClick = { viewModel.toggleAutoKnockDialog(true) },
                     modifier = Modifier.size(40.dp)
@@ -172,6 +160,18 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         imageVector = if (state.isAutoKnockEnabled) Icons.Filled.Timer else Icons.Outlined.Timer,
                         contentDescription = "自动敲击设置",
                         tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
+                    )
+                }
+
+                // 2. 清屏开关按钮
+                IconButton(
+                    onClick = { viewModel.toggleZenMode() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (state.isZenMode) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                        contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
+                        tint = if (state.isZenMode) Color(0xFFFFD54F) else Color(0xFF999999)
                     )
                 }
 

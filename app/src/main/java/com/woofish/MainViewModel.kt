@@ -18,7 +18,7 @@ data class WoodenFishUiState(
     val bgmVolume: Float = 0.3f,
     val soundIndex: Int = 0,
     val isAnimationEnabled: Boolean = true,
-    val isFullScreenTapEnabled: Boolean = false,
+    val isFullScreenTapEnabled: Boolean = true,
     val isZenMode: Boolean = false,
     val showSettings: Boolean = false,
     val isAutoKnockEnabled: Boolean = false,
@@ -39,7 +39,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             soundIndex = prefs.getInt("key_sound_index", 0),
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
-            isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", false),
+            isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
             autoKnockIntervalMs = prefs.getLong("key_auto_knock_interval", 1000L)
         )
     )
