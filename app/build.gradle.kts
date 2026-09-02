@@ -21,9 +21,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("woofish.keystore")
+            storePassword = "woofish"
+            keyAlias = "woofish"
+            keyPassword = "woofish"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
