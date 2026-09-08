@@ -1,9 +1,11 @@
 package com.woofish
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,12 +17,16 @@ import androidx.compose.ui.unit.sp
 fun SettingsDialog(
     state: WoodenFishUiState,
     onDismiss: () -> Unit,
+    onModeChange: (AppMode) -> Unit,
+    onSubtitleChange: (String) -> Unit,
     onVolumeChange: (Float) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit,
     onPickBgm: () -> Unit,
     onClearBgm: () -> Unit
 ) {
+    var subtitleInput by remember { mutableStateOf(state.subtitle) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF1E1E1E),
@@ -28,25 +34,100 @@ fun SettingsDialog(
         textContentColor = Color(0xFFCCCCCC),
         shape = RoundedCornerShape(16.dp),
         title = {
-            Text(text = "调节", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(text = "软件设置", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // 1. 本地背景音乐选择与管理
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppMode.entries.forEach { mode ->
+                            val isSelected = state.currentMode == mode
+                            Surface(
+                                onClick = { onModeChange(mode) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(vertical = 10.dp)
+                                ) {
+                                    Text(
+                                        text = mode.displayName.replace("模式", ""),
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. 计数文案自定义 (默认正念，可任意修改)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "计数显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    OutlinedTextField(
+                        value = subtitleInput,
+                        onValueChange = {
+                            subtitleInput = it
+                            onSubtitleChange(it)
+                        },
+                        singleLine = true,
+                        placeholder = { Text("例如：正念、功德、节拍", fontSize = 13.sp, color = Color.DarkGray) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFFFFD54F),
+                            unfocusedBorderColor = Color(0xFF444444)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    // 常用快捷选项
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf("正念", "功德", "节拍", "律动", "解压").forEach { tag ->
+                            Surface(
+                                onClick = {
+                                    subtitleInput = tag
+                                    onSubtitleChange(tag)
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (subtitleInput == tag) Color(0xFF3A301D) else Color(0xFF262626)
+                            ) {
+                                Text(
+                                    text = tag,
+                                    fontSize = 11.sp,
+                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else Color.Gray,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 3. 本地背景音乐选择与管理
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "背景音乐", fontSize = 15.sp, color = Color.White)
+                        Text(text = "背景音乐", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilledTonalButton(
                                 onClick = onPickBgm,
@@ -78,7 +159,7 @@ fun SettingsDialog(
                         text = if (state.customBgmUri != null) {
                             "当前：${state.customBgmTitle ?: "已选择本地音频"}"
                         } else {
-                            "未设置（点击右上角按钮打开手机音频）"
+                            "未设置（可自选手机内任意音频循环播放）"
                         },
                         fontSize = 12.sp,
                         color = if (state.customBgmUri != null) Color(0xFFFFD54F) else Color.Gray,
@@ -86,7 +167,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 2. 背景音乐音量调节滑块
+                // 4. 背景音乐音量调节滑块
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -106,7 +187,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 2. 全屏点击有效模式
+                // 5. 全屏敲击模式
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -114,7 +195,7 @@ fun SettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "全屏敲击模式", fontSize = 15.sp, color = Color.White)
-                        Text(text = "点击屏幕任意区域均可敲击木鱼", fontSize = 12.sp, color = Color.Gray)
+                        Text(text = "点击屏幕任意区域均可触发击打", fontSize = 12.sp, color = Color.Gray)
                     }
                     Switch(
                         checked = state.isFullScreenTapEnabled,
@@ -128,7 +209,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 3. 功德统计清零
+                // 6. 统计清零
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -136,7 +217,7 @@ fun SettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "统计清零", fontSize = 15.sp, color = Color.White)
-                        Text(text = "重置已敲击的功德总数", fontSize = 12.sp, color = Color.Gray)
+                        Text(text = "重置已敲击的计数总数", fontSize = 12.sp, color = Color.Gray)
                     }
                     Button(
                         onClick = {

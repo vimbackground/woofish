@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 
 data class WoodenFishUiState(
     val count: Long = 0,
+    val currentMode: AppMode = AppMode.WOODEN_FISH,
+    val subtitle: String = "正念",
     val isBgmPlaying: Boolean = false,
     val bgmVolume: Float = 0.3f,
     val customBgmUri: String? = null,
@@ -24,9 +26,10 @@ data class WoodenFishUiState(
     val isZenMode: Boolean = false,
     val showSettings: Boolean = false,
     val isAutoKnockEnabled: Boolean = false,
+    val bpm: Int = 60,
     val autoKnockIntervalMs: Long = 1000L,
     val showAutoKnockDialog: Boolean = false,
-    val knockTrigger: Long = 0L // 用于驱动木鱼受力下压回弹动画
+    val knockTrigger: Long = 0L // 用于驱动木鱼/乐器受力下压回弹动画
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -35,22 +38,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var autoKnockJob: Job? = null
 
+    private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
+    private val initialBpm: Int = prefs.getInt("key_bpm", 60)
+
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
             count = prefs.getLong("key_count", 0L),
+            currentMode = initialMode,
+            subtitle = prefs.getString("key_subtitle", initialMode.defaultSubtitle) ?: initialMode.defaultSubtitle,
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             customBgmUri = prefs.getString("key_bgm_uri", null),
             customBgmTitle = prefs.getString("key_bgm_title", null),
-            soundIndex = prefs.getInt("key_sound_index", 0),
+            soundIndex = prefs.getInt("key_sound_${initialMode.id}", 0),
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
             isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
-            autoKnockIntervalMs = prefs.getLong("key_auto_knock_interval", 1000L)
+            bpm = initialBpm,
+            autoKnockIntervalMs = (60000L / initialBpm).coerceIn(200L, 2000L)
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
 
-    fun onKnock() {
-        audioPlayer.playKnock(_uiState.value.soundIndex)
+    fun onHit() {
+        val mode = _uiState.value.currentMode
+        val sIndex = _uiState.value.soundIndex
+        audioPlayer.playHit(mode, sIndex)
         val newCount = _uiState.value.count + 1
         _uiState.value = _uiState.value.copy(
             count = newCount,
@@ -59,11 +70,59 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putLong("key_count", newCount).apply()
     }
 
+    // 兼容原敲击方法名
+    fun onKnock() {
+        onHit()
+    }
+
+    fun setAppMode(mode: AppMode) {
+        if (mode == _uiState.value.currentMode) return
+        val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", 0)
+        val currentSubtitle = _uiState.value.subtitle
+        // 如果当前文案等于前一个模式的默认文案，或者未自定义，则自动适配新模式的默认文案
+        val isDefaultSubtitle = AppMode.entries.any { it.defaultSubtitle == currentSubtitle }
+        val newSubtitle = if (isDefaultSubtitle) mode.defaultSubtitle else currentSubtitle
+
+        _uiState.value = _uiState.value.copy(
+            currentMode = mode,
+            soundIndex = savedSoundIndex.coerceIn(0, (mode.soundNames.size - 1).coerceAtLeast(0)),
+            subtitle = newSubtitle
+        )
+        prefs.edit()
+            .putString("key_mode", mode.id)
+            .putString("key_subtitle", newSubtitle)
+            .apply()
+    }
+
     fun toggleSoundEffect() {
-        val nextIndex = if (_uiState.value.soundIndex == 0) 1 else 0
+        val currentMode = _uiState.value.currentMode
+        val maxSounds = currentMode.soundNames.size
+        val nextIndex = (_uiState.value.soundIndex + 1) % maxSounds
         _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
-        prefs.edit().putInt("key_sound_index", nextIndex).apply()
-        audioPlayer.playKnock(nextIndex)
+        prefs.edit().putInt("key_sound_${currentMode.id}", nextIndex).apply()
+        audioPlayer.playHit(currentMode, nextIndex)
+    }
+
+    fun updateSubtitle(text: String) {
+        val trimmed = text.trim()
+        val newSubtitle = if (trimmed.isEmpty()) _uiState.value.currentMode.defaultSubtitle else trimmed
+        _uiState.value = _uiState.value.copy(subtitle = newSubtitle)
+        prefs.edit().putString("key_subtitle", newSubtitle).apply()
+    }
+
+    fun setBpm(newBpm: Int) {
+        val safeBpm = newBpm.coerceIn(30, 300)
+        val intervalMs = 60000L / safeBpm
+        _uiState.value = _uiState.value.copy(
+            bpm = safeBpm,
+            autoKnockIntervalMs = intervalMs
+        )
+        prefs.edit().putInt("key_bpm", safeBpm).apply()
+
+        // 如果正在自动敲击，重启协程以应用新频率
+        if (_uiState.value.isAutoKnockEnabled) {
+            toggleAutoKnock(true)
+        }
     }
 
     fun setCustomBgm(uriString: String, title: String) {
@@ -129,20 +188,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (nextState) {
             autoKnockJob = viewModelScope.launch {
                 while (isActive) {
-                    onKnock()
+                    onHit()
                     delay(_uiState.value.autoKnockIntervalMs)
                 }
             }
-        }
-    }
-
-    fun setAutoKnockInterval(intervalMs: Long) {
-        _uiState.value = _uiState.value.copy(autoKnockIntervalMs = intervalMs)
-        prefs.edit().putLong("key_auto_knock_interval", intervalMs).apply()
-        
-        // 如果正在自动敲击，重启协程以应用新频率
-        if (_uiState.value.isAutoKnockEnabled) {
-            toggleAutoKnock(true)
         }
     }
 

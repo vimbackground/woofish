@@ -11,9 +11,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -22,19 +22,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+// 触碰即响 (Touch DOWN 零延迟) 辅助修饰符
+fun Modifier.detectInstantTap(
+    enabled: Boolean = true,
+    onDown: () -> Unit,
+    onUp: () -> Unit
+): Modifier = if (enabled) {
+    this.pointerInput(enabled) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            onDown()
+            waitForUpOrCancellation()
+            onUp()
+        }
+    }
+} else this
+
 @Composable
 fun WoodenFishScreen(viewModel: MainViewModel) {
     val state by viewModel.uiState.collectAsState()
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
     val context = LocalContext.current
+
+    // 手指瞬时触控状态（用于按下瞬间立刻发声与下压动画）
+    var isTouchDown by remember { mutableStateOf(false) }
 
     // 本地音频选择器 (SAF)
     val audioPickerLauncher = rememberLauncherForActivityResult(
@@ -66,7 +87,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
     }
 
-    // 自动敲击时驱动木鱼下压回弹动画
+    // 自动节奏时驱动受力下压回弹动画
     var isAutoBouncing by remember { mutableStateOf(false) }
     LaunchedEffect(state.knockTrigger) {
         if (state.knockTrigger > 0L) {
@@ -76,7 +97,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
     }
 
-    val isKnocked = isPressed || isAutoBouncing
+    val isKnocked = isTouchDown || isAutoBouncing
     val shouldAnimate = state.isAnimationEnabled && isKnocked
 
     val scaleX by animateFloatAsState(
@@ -105,18 +126,21 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .fillMaxSize()
             .background(Color(0xFF111111))
             .systemBarsPadding()
-            // 当启用全屏敲击模式时，点击屏幕任意空白区域均可敲击木鱼
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = state.isFullScreenTapEnabled
-            ) {
-                viewModel.onKnock()
-            }
+            // 全屏点击模式下，手指接触屏幕瞬间（DOWN）立即触发发声与动效
+            .detectInstantTap(
+                enabled = state.isFullScreenTapEnabled,
+                onDown = {
+                    isTouchDown = true
+                    viewModel.onHit()
+                },
+                onUp = {
+                    isTouchDown = false
+                }
+            )
     ) {
         // -------------------------------------------------------------
         // 1. 顶栏全部保留：
-        // 左侧【BGM + 动效 + 音效】，右侧【自动敲击设置 + 清屏 + 软件设置】
+        // 左侧【BGM + 动效 + 音效】，右侧【自动节奏设置 + 清屏 + 软件设置】
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -127,12 +151,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ◀ 左上角：【BGM 开关】 + 【木鱼动效开关】 + 【音效选择】
+            // ◀ 左上角：【BGM 开关】 + 【动效开关】 + 【音效切换】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 背景音乐开关（未选择音频时点击触发选择本地音乐，已选择时点击切换播放/暂停）
+                // 1. 背景音乐开关
                 IconButton(
                     onClick = {
                         if (state.customBgmUri == null) {
@@ -154,7 +178,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 2. 木鱼物理打击动效开关
+                // 2. 物理打击形变动效开关
                 IconButton(
                     onClick = { viewModel.toggleAnimation() },
                     modifier = Modifier.size(40.dp)
@@ -168,7 +192,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 3. 音效切换胶囊按钮（位于动效开关右侧）
+                // 3. 当前模式下的专属音效切换胶囊按钮
+                val currentSoundName = state.currentMode.soundNames.getOrNull(state.soundIndex)
+                    ?: state.currentMode.soundNames.firstOrNull() ?: "音效"
                 Surface(
                     onClick = { viewModel.toggleSoundEffect() },
                     shape = RoundedCornerShape(16.dp),
@@ -176,7 +202,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     tonalElevation = 2.dp
                 ) {
                     Text(
-                        text = if (state.soundIndex == 0) "🔊 音效 1" else "🔊 音效 2",
+                        text = "🔊 $currentSoundName",
                         color = Color(0xFFCCCCCC),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
@@ -185,12 +211,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // ▶ 右上角：【自动敲击设置】 + 【清屏开关】 + 【软件设置】
+            // ▶ 右上角：【自动节奏/节拍器设置】 + 【清屏开关】 + 【软件设置】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 自动敲击木鱼独立调节按钮
+                // 1. 自动节奏设置按钮
                 IconButton(
                     onClick = { viewModel.toggleAutoKnockDialog(true) },
                     modifier = Modifier.size(40.dp)
@@ -199,7 +225,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         painter = painterResource(
                             id = if (state.isAutoKnockEnabled) R.drawable.ic_timer else R.drawable.ic_timer_outline
                         ),
-                        contentDescription = "自动敲击设置",
+                        contentDescription = "自动节奏设置",
                         tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
                     )
                 }
@@ -233,7 +259,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
 
         // -------------------------------------------------------------
-        // 2. 功德大计数与文字（清屏状态下仅清除此处的数字与文字）
+        // 2. 大计数与文字（等宽排版稳定无抖动，支持自定义副标题）
         // -------------------------------------------------------------
         AnimatedVisibility(
             visible = !state.isZenMode,
@@ -253,10 +279,15 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     color = Color.White,
                     fontSize = 76.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    style = TextStyle(
+                        fontFeatureSettings = "tnum",
+                        textAlign = TextAlign.Center
+                    ),
                     letterSpacing = 2.sp
                 )
                 Text(
-                    text = "功德",
+                    text = state.subtitle,
                     color = Color(0xFF555555),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
@@ -265,11 +296,11 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
 
         // -------------------------------------------------------------
-        // 3. 居中木鱼主体（敲击时根据动效开关产生物理受力弹性反馈）
+        // 3. 居中乐器主体（根据模式呈现木鱼、节拍器、鼓，敲击时下压回弹）
         // -------------------------------------------------------------
         Image(
-            painter = painterResource(id = R.drawable.ic_wooden_fish),
-            contentDescription = "Wooden Fish",
+            painter = painterResource(id = state.currentMode.iconResId),
+            contentDescription = state.currentMode.displayName,
             modifier = Modifier
                 .size(240.dp)
                 .align(Alignment.Center)
@@ -279,23 +310,27 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     this.translationY = offsetY
                     this.rotationZ = rotation
                 }
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) {
-                    viewModel.onKnock()
-                }
+                .detectInstantTap(
+                    enabled = !state.isFullScreenTapEnabled,
+                    onDown = {
+                        isTouchDown = true
+                        viewModel.onHit()
+                    },
+                    onUp = {
+                        isTouchDown = false
+                    }
+                )
         )
 
         // -------------------------------------------------------------
-        // 4. 自动敲击调节弹窗
+        // 4. 自动节奏/BPM调节弹窗
         // -------------------------------------------------------------
         if (state.showAutoKnockDialog) {
             AutoKnockDialog(
                 state = state,
                 onDismiss = { viewModel.toggleAutoKnockDialog(false) },
                 onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
-                onIntervalChange = { viewModel.setAutoKnockInterval(it) }
+                onBpmChange = { viewModel.setBpm(it) }
             )
         }
 
@@ -306,6 +341,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             SettingsDialog(
                 state = state,
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
+                onModeChange = { viewModel.setAppMode(it) },
+                onSubtitleChange = { viewModel.updateSubtitle(it) },
                 onVolumeChange = { viewModel.updateBgmVolume(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
                 onResetCount = { viewModel.resetCount() },

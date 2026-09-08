@@ -4,3 +4,4 @@
 
 # Keep data models if any
 -keep class com.woofish.WoodenFishUiState { *; }
+-keep class com.woofish.AppMode { *; }

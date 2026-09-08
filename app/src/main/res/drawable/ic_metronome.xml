@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- 节拍器底座外框 (倒梯形金字塔机身) -->
+    <path
+        android:fillColor="#FF2A2A2A"
+        android:pathData="M 32,8 L 68,8 L 84,86 L 16,86 Z"/>
+    
+    <!-- 节拍器内槽面板 (深色镂空面板) -->
+    <path
+        android:fillColor="#FF181818"
+        android:pathData="M 37,16 L 63,16 L 75,80 L 25,80 Z"/>
+
+    <!-- 节拍器中心刻度标尺线 -->
+    <path
+        android:strokeColor="#FF444444"
+        android:strokeWidth="1.5"
+        android:pathData="M 50,20 L 50,78"/>
+    
+    <!-- 刻度横线 -->
+    <path
+        android:strokeColor="#FF555555"
+        android:strokeWidth="1"
+        android:pathData="M 44,28 L 56,28 M 45,36 L 55,36 M 46,44 L 54,44 M 45,52 L 55,52 M 44,60 L 56,60 M 43,68 L 57,68"/>
+
+    <!-- 节拍器金属摆杆 (微偏向右侧带律动感) -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 50,75 L 56,22"/>
+
+    <!-- 摆杆滑动重锤 (矩形砝码) -->
+    <path
+        android:fillColor="#FFFFD54F"
+        android:pathData="M 50,42 L 59,40 L 61,48 L 52,50 Z"/>
+
+    <!-- 底部木质垫脚与边框 -->
+    <path
+        android:fillColor="#FF383838"
+        android:pathData="M 14,84 L 86,84 L 88,90 L 12,90 Z"/>
+    
+    <!-- 节拍器顶部收口盖 -->
+    <path
+        android:fillColor="#FF383838"
+        android:pathData="M 30,6 L 70,6 L 68,10 L 32,10 Z"/>
+</vector>

@@ -11,7 +11,9 @@ import android.os.VibratorManager
 
 class AudioPlayer(private val context: Context) {
     private val soundPool: SoundPool
-    private val soundIds = mutableListOf<Int>()
+    private val woodenFishSounds = mutableListOf<Int>()
+    private val metronomeSounds = mutableListOf<Int>()
+    private val drumSounds = mutableListOf<Int>()
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
 
@@ -27,6 +29,7 @@ class AudioPlayer(private val context: Context) {
         val attributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setFlags(AudioAttributes.FLAG_LOW_LATENCY)
             .build()
 
         soundPool = SoundPool.Builder()
@@ -34,13 +37,29 @@ class AudioPlayer(private val context: Context) {
             .setAudioAttributes(attributes)
             .build()
 
-        soundIds.add(soundPool.load(context, R.raw.sound_1, 1))
-        soundIds.add(soundPool.load(context, R.raw.sound_2, 1))
+        // 1. 木鱼音效 (2 种)
+        woodenFishSounds.add(soundPool.load(context, R.raw.sound_1, 1))
+        woodenFishSounds.add(soundPool.load(context, R.raw.sound_2, 1))
+
+        // 2. 节拍器音效 (2 种)
+        metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))
+        metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_2, 1))
+
+        // 3. 电子鼓音效 (3 种)
+        drumSounds.add(soundPool.load(context, R.raw.sound_drum_kick, 1))
+        drumSounds.add(soundPool.load(context, R.raw.sound_drum_chinese, 1))
+        drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
     }
 
-    fun playKnock(soundIndex: Int) {
-        if (soundIndex in soundIds.indices) {
-            soundPool.play(soundIds[soundIndex], 1f, 1f, 1, 0, 1f)
+    fun playHit(mode: AppMode, soundIndex: Int) {
+        val list = when (mode) {
+            AppMode.WOODEN_FISH -> woodenFishSounds
+            AppMode.METRONOME -> metronomeSounds
+            AppMode.DRUM -> drumSounds
+        }
+        val safeIndex = soundIndex.coerceIn(0, (list.size - 1).coerceAtLeast(0))
+        if (safeIndex in list.indices) {
+            soundPool.play(list[safeIndex], 1f, 1f, 1, 0, 1f)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
@@ -48,6 +67,10 @@ class AudioPlayer(private val context: Context) {
             @Suppress("DEPRECATION")
             vibrator.vibrate(25)
         }
+    }
+
+    fun playKnock(soundIndex: Int) {
+        playHit(AppMode.WOODEN_FISH, soundIndex)
     }
 
     fun isBgmPlaying(): Boolean = bgmPlayer?.isPlaying == true
