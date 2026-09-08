@@ -229,6 +229,7 @@ fun AutoKnockDialog(
                             }
                         }
                     }
+                }
             }
         },
         confirmButton = {
