@@ -35,12 +35,12 @@
 ## 🛠️ 技术栈
 
 - **应用名称**：`正念` (woofish)
-- **当前版本**：`v0.7.0`
+- **当前版本**：`v0.8.0`
 - **语言**：Kotlin 2.0
 - **UI 框架**：Jetpack Compose (Material 3)
 - **音频引擎**：`SoundPool`（低延迟打击音效池） + `MediaPlayer`（本地 Uri BGM 循环播放）
 - **触觉反馈**：`Vibrator` / `VibrationEffect`
-- **CI/CD 自动化**：GitHub Actions 自动构建与发布 Release，生成 `正念.apk`
+- **CI/CD 自动化**：GitHub Actions 自动构建与发布 Release，生成 `woofish-0.8.0.apk`
 
 ---
 

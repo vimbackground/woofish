@@ -42,11 +42,11 @@ jobs:
             TAG_VER="${{ github.ref_name }}"
             PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v0.7.0"
-            PURE_VER="0.7.0"
+            TAG_VER="v0.8.0"
+            PURE_VER="0.8.0"
           fi
-          # 生成名称为 正念.apk 的安装包
-          APK_NAME="正念.apk"
+          # 生成名称为 woofish-x.y.z.apk 的安装包
+          APK_NAME="woofish-${PURE_VER}.apk"
           FOUND_APK=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
           if [ -n "$FOUND_APK" ]; then
             cp "$FOUND_APK" "${APK_NAME}"
