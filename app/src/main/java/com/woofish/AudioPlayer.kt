@@ -13,6 +13,7 @@ class AudioPlayer(private val context: Context) {
     private val soundPool: SoundPool
     private val soundIds = mutableListOf<Int>()
     private var bgmPlayer: MediaPlayer? = null
+    private var currentBgmUri: String? = null
 
     private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -51,15 +52,37 @@ class AudioPlayer(private val context: Context) {
 
     fun isBgmPlaying(): Boolean = bgmPlayer?.isPlaying == true
 
-    fun toggleBgm(volume: Float): Boolean {
-        return if (bgmPlayer == null) {
-            bgmPlayer = MediaPlayer.create(context, R.raw.bgm).apply {
+    fun playCustomBgm(uriString: String, volume: Float): Boolean {
+        return try {
+            bgmPlayer?.release()
+            bgmPlayer = null
+
+            val uri = android.net.Uri.parse(uriString)
+            val player = MediaPlayer().apply {
+                setDataSource(context, uri)
                 isLooping = true
                 setVolume(volume, volume)
+                prepare()
                 start()
             }
+            bgmPlayer = player
+            currentBgmUri = uriString
             true
-        } else {
+        } catch (e: Exception) {
+            e.printStackTrace()
+            bgmPlayer?.release()
+            bgmPlayer = null
+            currentBgmUri = null
+            false
+        }
+    }
+
+    fun toggleBgm(uriString: String?, volume: Float): Boolean {
+        if (uriString.isNullOrEmpty()) {
+            return false
+        }
+
+        return if (bgmPlayer != null && currentBgmUri == uriString) {
             if (bgmPlayer?.isPlaying == true) {
                 bgmPlayer?.pause()
                 false
@@ -67,6 +90,20 @@ class AudioPlayer(private val context: Context) {
                 bgmPlayer?.start()
                 true
             }
+        } else {
+            playCustomBgm(uriString, volume)
+        }
+    }
+
+    fun stopBgm() {
+        try {
+            bgmPlayer?.stop()
+            bgmPlayer?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            bgmPlayer = null
+            currentBgmUri = null
         }
     }
 
@@ -76,7 +113,6 @@ class AudioPlayer(private val context: Context) {
 
     fun release() {
         soundPool.release()
-        bgmPlayer?.release()
-        bgmPlayer = null
+        stopBgm()
     }
 }

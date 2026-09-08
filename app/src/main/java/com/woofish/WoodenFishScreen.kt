@@ -1,5 +1,9 @@
 package com.woofish
 
+import android.content.Intent
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -12,21 +16,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +34,37 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     val state by viewModel.uiState.collectAsState()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val context = LocalContext.current
+
+    // 本地音频选择器 (SAF)
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            var displayName = "本地音乐"
+            try {
+                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex != -1) {
+                            displayName = cursor.getString(nameIndex) ?: displayName
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            viewModel.setCustomBgm(uri.toString(), displayName)
+        }
+    }
 
     // 自动敲击时驱动木鱼下压回弹动画
     var isAutoBouncing by remember { mutableStateOf(false) }
@@ -89,7 +116,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     ) {
         // -------------------------------------------------------------
         // 1. 顶栏全部保留：
-        // 左侧【BGM + 动效 + 音效】，右侧【清屏 + 自动敲击设置 + 软件设置】
+        // 左侧【BGM + 动效 + 音效】，右侧【自动敲击设置 + 清屏 + 软件设置】
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -105,15 +132,25 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 背景音乐开关
+                // 1. 背景音乐开关（未选择音频时点击触发选择本地音乐，已选择时点击切换播放/暂停）
                 IconButton(
-                    onClick = { viewModel.toggleBgm() },
+                    onClick = {
+                        if (state.customBgmUri == null) {
+                            audioPickerLauncher.launch(arrayOf("audio/*"))
+                        } else {
+                            viewModel.toggleBgm()
+                        }
+                    },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = "背景音乐",
-                        tint = if (state.isBgmPlaying) Color.White else Color(0xFF555555)
+                        painter = painterResource(id = R.drawable.ic_music_note),
+                        contentDescription = if (state.customBgmUri == null) "选择本地背景音乐" else "背景音乐开关",
+                        tint = when {
+                            state.isBgmPlaying -> Color(0xFFFFD54F)
+                            state.customBgmUri != null -> Color.White
+                            else -> Color(0xFF555555)
+                        }
                     )
                 }
 
@@ -123,7 +160,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = if (state.isAnimationEnabled) Icons.Filled.AutoAwesome else Icons.Outlined.AutoAwesome,
+                        painter = painterResource(
+                            id = if (state.isAnimationEnabled) R.drawable.ic_auto_awesome else R.drawable.ic_auto_awesome_outline
+                        ),
                         contentDescription = "动效开关",
                         tint = if (state.isAnimationEnabled) Color(0xFFFFD54F) else Color(0xFF555555)
                     )
@@ -157,7 +196,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = if (state.isAutoKnockEnabled) Icons.Filled.Timer else Icons.Outlined.Timer,
+                        painter = painterResource(
+                            id = if (state.isAutoKnockEnabled) R.drawable.ic_timer else R.drawable.ic_timer_outline
+                        ),
                         contentDescription = "自动敲击设置",
                         tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
                     )
@@ -169,7 +210,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = if (state.isZenMode) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                        painter = painterResource(
+                            id = if (state.isZenMode) R.drawable.ic_visibility else R.drawable.ic_visibility_off
+                        ),
                         contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
                         tint = if (state.isZenMode) Color(0xFFFFD54F) else Color(0xFF999999)
                     )
@@ -181,7 +224,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
+                        painter = painterResource(id = R.drawable.ic_settings),
                         contentDescription = "软件设置",
                         tint = Color(0xFF999999)
                     )
@@ -265,7 +308,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
                 onVolumeChange = { viewModel.updateBgmVolume(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
-                onResetCount = { viewModel.resetCount() }
+                onResetCount = { viewModel.resetCount() },
+                onPickBgm = { audioPickerLauncher.launch(arrayOf("audio/*")) },
+                onClearBgm = { viewModel.clearCustomBgm() }
             )
         }
     }

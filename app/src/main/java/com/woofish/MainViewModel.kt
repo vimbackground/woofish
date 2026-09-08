@@ -16,6 +16,8 @@ data class WoodenFishUiState(
     val count: Long = 0,
     val isBgmPlaying: Boolean = false,
     val bgmVolume: Float = 0.3f,
+    val customBgmUri: String? = null,
+    val customBgmTitle: String? = null,
     val soundIndex: Int = 0,
     val isAnimationEnabled: Boolean = true,
     val isFullScreenTapEnabled: Boolean = true,
@@ -37,6 +39,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         WoodenFishUiState(
             count = prefs.getLong("key_count", 0L),
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
+            customBgmUri = prefs.getString("key_bgm_uri", null),
+            customBgmTitle = prefs.getString("key_bgm_title", null),
             soundIndex = prefs.getInt("key_sound_index", 0),
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
             isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
@@ -62,8 +66,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         audioPlayer.playKnock(nextIndex)
     }
 
+    fun setCustomBgm(uriString: String, title: String) {
+        prefs.edit()
+            .putString("key_bgm_uri", uriString)
+            .putString("key_bgm_title", title)
+            .apply()
+        val playing = audioPlayer.playCustomBgm(uriString, _uiState.value.bgmVolume)
+        _uiState.value = _uiState.value.copy(
+            customBgmUri = uriString,
+            customBgmTitle = title,
+            isBgmPlaying = playing
+        )
+    }
+
+    fun clearCustomBgm() {
+        audioPlayer.stopBgm()
+        prefs.edit()
+            .remove("key_bgm_uri")
+            .remove("key_bgm_title")
+            .apply()
+        _uiState.value = _uiState.value.copy(
+            customBgmUri = null,
+            customBgmTitle = null,
+            isBgmPlaying = false
+        )
+    }
+
     fun toggleBgm() {
-        val playing = audioPlayer.toggleBgm(_uiState.value.bgmVolume)
+        val uri = _uiState.value.customBgmUri ?: return
+        val playing = audioPlayer.toggleBgm(uri, _uiState.value.bgmVolume)
         _uiState.value = _uiState.value.copy(isBgmPlaying = playing)
     }
 

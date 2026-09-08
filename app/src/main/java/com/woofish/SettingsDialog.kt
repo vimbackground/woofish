@@ -17,7 +17,9 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
-    onResetCount: () -> Unit
+    onResetCount: () -> Unit,
+    onPickBgm: () -> Unit,
+    onClearBgm: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -35,7 +37,56 @@ fun SettingsDialog(
                     .padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // 1. 背景音乐音量调节滑块
+                // 1. 本地背景音乐选择与管理
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "背景音乐", fontSize = 15.sp, color = Color.White)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledTonalButton(
+                                onClick = onPickBgm,
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color(0xFF333333),
+                                    contentColor = Color.White
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = if (state.customBgmUri == null) "选择音乐" else "更换音乐",
+                                    fontSize = 12.sp
+                                )
+                            }
+                            if (state.customBgmUri != null) {
+                                OutlinedButton(
+                                    onClick = onClearBgm,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(text = "清除", fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        text = if (state.customBgmUri != null) {
+                            "当前：${state.customBgmTitle ?: "已选择本地音频"}"
+                        } else {
+                            "未设置（点击右上角按钮打开手机音频）"
+                        },
+                        fontSize = 12.sp,
+                        color = if (state.customBgmUri != null) Color(0xFFFFD54F) else Color.Gray,
+                        maxLines = 1
+                    )
+                }
+
+                // 2. 背景音乐音量调节滑块
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
