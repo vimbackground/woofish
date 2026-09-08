@@ -35,7 +35,7 @@
 ## 🛠️ 技术栈
 
 - **应用名称**：`正念` (woofish)
-- **当前版本**：`v0.6.0`
+- **当前版本**：`v0.7.0`
 - **语言**：Kotlin 2.0
 - **UI 框架**：Jetpack Compose (Material 3)
 - **音频引擎**：`SoundPool`（低延迟打击音效池） + `MediaPlayer`（本地 Uri BGM 循环播放）

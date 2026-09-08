@@ -30,6 +30,6 @@ enum class AppMode(
     );
 
     companion object {
-        fun fromId(id: String): AppMode = entries.firstOrNull { it.id == id } ?: WOODEN_FISH
+        fun fromId(id: String): AppMode = entries.firstOrNull { it.id == id } ?: METRONOME
     }
 }

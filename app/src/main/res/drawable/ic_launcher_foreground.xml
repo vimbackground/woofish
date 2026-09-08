@@ -5,61 +5,57 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <!-- 极简现代钟表 (钟/表) 前景矢量图 -->
+    <!-- 极简现代钟表 (小巧白色表盘，黑色刻度与指针) -->
     <group
         android:translateX="0"
         android:translateY="0">
         
-        <!-- 顶部表冠 / 挂环 -->
+        <!-- 顶部表钮 / 表冠 (纯白色) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 52,32 H 56 V 36 H 52 Z"/>
         <path
             android:fillColor="#00000000"
-            android:strokeColor="#DDDDDD"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:pathData="M 50,32 C 50,29 58,29 58,32"/>
+
+        <!-- 纯白实心小表盘 (半径 18dp，小巧灵动居中) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 54,36 A 18,18 0 1,1 53.99,36 Z"/>
+
+        <!-- 四方黑色刻度线 (12点、3点、6点、9点) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#111111"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:pathData="M 54,39 L 54,42.5
+                             M 54,65.5 L 54,69
+                             M 39,54 L 42.5,54
+                             M 65.5,54 L 69,54"/>
+
+        <!-- 黑色时针 (指向 10 点，短实笃定) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#111111"
             android:strokeWidth="2.5"
             android:strokeLineCap="round"
-            android:pathData="M 48,27 C 48,23 60,23 60,27"/>
-        
-        <!-- 顶部表钮柱 -->
-        <path
-            android:fillColor="#EEEEEE"
-            android:pathData="M 52,27 H 56 V 30 H 52 Z"/>
+            android:pathData="M 54,54 L 46.5,46.5"/>
 
-        <!-- 钟表外圆环表壳 -->
+        <!-- 黑色分针 (指向 2 点，修长舒展，构成经典 10:10 正念微笑姿态) -->
         <path
             android:fillColor="#00000000"
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="3.5"
-            android:pathData="M 54,31 A 24,24 0 1,1 53.99,31 Z"/>
-
-        <!-- 四方刻度线 (12点、3点、6点、9点) -->
-        <path
-            android:fillColor="#00000000"
-            android:strokeColor="#CCCCCC"
-            android:strokeWidth="2"
+            android:strokeColor="#111111"
+            android:strokeWidth="2.0"
             android:strokeLineCap="round"
-            android:pathData="M 54,35 L 54,39
-                             M 54,71 L 54,75
-                             M 35,55 L 39,55
-                             M 71,55 L 75,55"/>
+            android:pathData="M 54,54 L 63.5,44.5"/>
 
-        <!-- 时针 (指向 10 点，短而坚实，代表定力与正念) -->
+        <!-- 黑色中心轴点 -->
         <path
-            android:fillColor="#00000000"
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="3.2"
-            android:strokeLineCap="round"
-            android:pathData="M 54,55 L 44,45"/>
-
-        <!-- 分针 (指向 2 点，修长优雅，与时针形成经典的 10:10 舒展微笑姿态) -->
-        <path
-            android:fillColor="#00000000"
-            android:strokeColor="#FFD54F"
-            android:strokeWidth="2.4"
-            android:strokeLineCap="round"
-            android:pathData="M 54,55 L 67,45"/>
-
-        <!-- 中心圆轴心 (金色微点缀) -->
-        <path
-            android:fillColor="#FFD54F"
-            android:pathData="M 54,52.5 A 2.5,2.5 0 1,1 53.99,52.5 Z"/>
+            android:fillColor="#111111"
+            android:pathData="M 54,52.2 A 1.8,1.8 0 1,1 53.99,52.2 Z"/>
     </group>
 </vector>

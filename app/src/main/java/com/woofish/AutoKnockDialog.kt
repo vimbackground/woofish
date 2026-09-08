@@ -118,53 +118,117 @@ fun AutoKnockDialog(
                         )
                     )
 
-                    // 音乐常见节奏预设与自定义输入快捷栏
-                    Text(text = "常用音乐速度：", fontSize = 12.sp, color = Color.Gray)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        listOf(
-                            "60 慢板" to 60,
-                            "80 行板" to 80,
-                            "100 中板" to 100,
-                            "120 快板" to 120
-                        ).forEach { (label, value) ->
-                            Surface(
-                                onClick = { onBpmChange(value) },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (state.bpm == value) Color(0xFF3A301D) else Color(0xFF282828),
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = label,
-                                    fontSize = 11.sp,
-                                    color = if (state.bpm == value) Color(0xFFFFD54F) else Color(0xFF999999),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                                )
+                    // 音乐常见节奏预设与自定义输入快捷栏（两排布局）
+                    val (topRowPresets, bottomRowPresets) = remember(state.currentMode) {
+                        val top = when (state.currentMode) {
+                            AppMode.METRONOME -> listOf(
+                                "慢板 56" to 56,    // Lento
+                                "柔板 72" to 72,    // Adagio
+                                "行板 88" to 88     // Andante
+                            )
+                            AppMode.WOODEN_FISH -> listOf(
+                                "禅定 56" to 56,
+                                "沉静 72" to 72,
+                                "舒缓 88" to 88
+                            )
+                            AppMode.DRUM -> listOf(
+                                "慢摇 56" to 56,
+                                "柔和 72" to 72,
+                                "律动 88" to 88
+                            )
+                        }
+                        val bottom = when (state.currentMode) {
+                            AppMode.METRONOME -> listOf(
+                                "中板 108" to 108,  // Moderato
+                                "快板 132" to 132   // Allegro
+                            )
+                            AppMode.WOODEN_FISH -> listOf(
+                                "适中 108" to 108,
+                                "清心 132" to 132
+                            )
+                            AppMode.DRUM -> listOf(
+                                "中速 108" to 108,
+                                "动感 132" to 132
+                            )
+                        }
+                        top to bottom
+                    }
+
+                    Text(text = "常用节拍速度：", fontSize = 12.sp, color = Color.Gray)
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // 上排三项：Lento、Adagio、Andante
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            topRowPresets.forEach { (label, value) ->
+                                val isSelected = state.bpm == value
+                                Surface(
+                                    onClick = { onBpmChange(value) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                        )
+                                    }
+                                }
                             }
                         }
 
-                        // 自定义手动输入按钮
-                        Surface(
-                            onClick = {
-                                inputBpmText = state.bpm.toString()
-                                showCustomInputDialog = true
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF2D2A22),
-                            modifier = Modifier.padding(vertical = 2.dp)
+                        // 下排三项：Moderato、Allegro、自定义
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = "自定义",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFFFFD54F),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                            )
+                            bottomRowPresets.forEach { (label, value) ->
+                                val isSelected = state.bpm == value
+                                Surface(
+                                    onClick = { onBpmChange(value) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // 第六项：自定义输入项
+                            Surface(
+                                onClick = {
+                                    inputBpmText = state.bpm.toString()
+                                    showCustomInputDialog = true
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF2D2A22),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                    Text(
+                                        text = "自定义 ✍️",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFFFD54F)
+                                    )
+                                }
+                            }
                         }
                     }
-                }
             }
         },
         confirmButton = {

@@ -42,8 +42,8 @@ jobs:
             TAG_VER="${{ github.ref_name }}"
             PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v0.6.0"
-            PURE_VER="0.6.0"
+            TAG_VER="v0.7.0"
+            PURE_VER="0.7.0"
           fi
           # 生成名称为 正念.apk 的安装包
           APK_NAME="正念.apk"

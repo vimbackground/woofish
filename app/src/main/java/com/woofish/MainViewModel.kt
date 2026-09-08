@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 
 data class WoodenFishUiState(
     val count: Long = 0,
-    val currentMode: AppMode = AppMode.WOODEN_FISH,
-    val subtitle: String = "正念",
+    val currentMode: AppMode = AppMode.METRONOME,
+    val subtitle: String = "节拍",
     val isBgmPlaying: Boolean = false,
     val bgmVolume: Float = 0.3f,
     val customBgmUri: String? = null,
@@ -38,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var autoKnockJob: Job? = null
 
-    private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
+    private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.METRONOME.id) ?: AppMode.METRONOME.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
 
     private val _uiState = MutableStateFlow(

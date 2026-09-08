@@ -267,7 +267,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             exit = fadeOut(tween(200)),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 80.dp)
+                .padding(top = 112.dp)
                 .align(Alignment.TopCenter)
         ) {
             Column(
