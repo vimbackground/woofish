@@ -126,18 +126,24 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .fillMaxSize()
             .background(Color(0xFF111111))
             .systemBarsPadding()
-            // 全屏点击模式下，手指接触屏幕瞬间（DOWN）立即触发发声与动效
-            .detectInstantTap(
-                enabled = state.isFullScreenTapEnabled,
-                onDown = {
-                    isTouchDown = true
-                    viewModel.onHit()
-                },
-                onUp = {
-                    isTouchDown = false
-                }
-            )
     ) {
+        // 全屏点击响应区域（全屏模式下，响应顶栏下方的整个屏幕区域，避开顶栏按钮以免设置时误触发敲击发声）
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 64.dp)
+                .detectInstantTap(
+                    enabled = state.isFullScreenTapEnabled,
+                    onDown = {
+                        isTouchDown = true
+                        viewModel.onHit()
+                    },
+                    onUp = {
+                        isTouchDown = false
+                    }
+                )
+        )
+
         // -------------------------------------------------------------
         // 1. 顶栏全部保留：
         // 左侧【BGM + 动效 + 音效】，右侧【自动节奏设置 + 清屏 + 软件设置】

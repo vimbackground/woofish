@@ -78,10 +78,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setAppMode(mode: AppMode) {
         if (mode == _uiState.value.currentMode) return
         val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", 0)
-        val currentSubtitle = _uiState.value.subtitle
-        // 如果当前文案等于前一个模式的默认文案，或者未自定义，则自动适配新模式的默认文案
-        val isDefaultSubtitle = AppMode.entries.any { it.defaultSubtitle == currentSubtitle }
-        val newSubtitle = if (isDefaultSubtitle) mode.defaultSubtitle else currentSubtitle
+        // 模式切换时，计数显示文案自动调整：木鱼（正念），节拍器（节拍），电子鼓（律动）
+        val newSubtitle = mode.defaultSubtitle
 
         _uiState.value = _uiState.value.copy(
             currentMode = mode,

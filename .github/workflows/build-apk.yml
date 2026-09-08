@@ -67,7 +67,7 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "正念木鱼 Android ${{ steps.prepare_apk.outputs.tag_ver }}"
+          name: "woofish-${{ steps.prepare_apk.outputs.pure_ver }}"
           tag_name: ${{ steps.prepare_apk.outputs.tag_ver }}
           files: ${{ steps.prepare_apk.outputs.apk_name }}
           body_path: RELEASE_NOTES.md

@@ -27,6 +27,10 @@ fun SettingsDialog(
 ) {
     var subtitleInput by remember { mutableStateOf(state.subtitle) }
 
+    LaunchedEffect(state.subtitle) {
+        subtitleInput = state.subtitle
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF1E1E1E),

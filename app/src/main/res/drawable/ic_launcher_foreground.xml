@@ -8,7 +8,7 @@
     <!-- 极简现代钟表 (小巧白色表盘，黑色刻度与指针) -->
     <group
         android:translateX="0"
-        android:translateY="0">
+        android:translateY="3.5">
         
         <!-- 顶部表钮 / 表冠 (纯白色) -->
         <path

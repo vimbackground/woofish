@@ -3,6 +3,8 @@
 
     <!-- 震动权限 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 麦克风录音权限（用于环境音乐节奏智能分析测速） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="true"
