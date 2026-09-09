@@ -121,14 +121,14 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     )
 
     // -------------------------------------------------------------
-    // 节拍器专属中间粗线条左右乒乓反复摆动动效
+    // 节拍器专属中间粗线条左右乒乓反复摆动动效（摆幅±12.5°，确保完全位于白区内部不越界）
     // -------------------------------------------------------------
     val metronomeTargetAngle = if (state.count == 0L) {
         0f
     } else if (state.count % 2L == 1L) {
-        20f
+        12.5f
     } else {
-        -20f
+        -12.5f
     }
     val metronomeAnimDuration = (state.autoKnockIntervalMs * 0.85f).toInt().coerceIn(120, 500)
     val metronomeAngle by animateFloatAsState(
@@ -324,8 +324,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
 
         // -------------------------------------------------------------
         // 3. 居中乐器主体
-        // 节拍器模式呈现稳定机身 + 中间粗线条乒乓反复摆动
-        // 其他模式（木鱼、电子鼓、活动）呈现稳重大气实物打击动效
+        // 节拍器模式呈现稳定加宽底座机身 + 中间粗线条乒乓反复摆动（绝不超出白色色块区域）
+        // 其他模式（木鱼、电子鼓）呈现纯白实心剪影与真实固态打击动效
         // -------------------------------------------------------------
         Box(
             modifier = Modifier
@@ -348,32 +348,32 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             contentAlignment = Alignment.Center
         ) {
             if (state.currentMode == AppMode.METRONOME) {
-                // 节拍器模式：机身保持稳定
+                // 节拍器模式：大底座纯白稳定机身
                 Image(
                     painter = painterResource(id = R.drawable.ic_metronome_body),
                     contentDescription = "节拍器机身",
                     modifier = Modifier.fillMaxSize()
                 )
-                // 中间形状优化为一根粗线条摆针，一拍在左一拍在右，乒乓反复摆动
+                // 中间粗线条摆针，左右乒乓摆动，严格收纳在白色区域内
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
                             rotationZ = metronomeAngle
-                            transformOrigin = TransformOrigin(0.5f, 0.72f)
+                            transformOrigin = TransformOrigin(0.5f, 0.74f)
                         }
                 ) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 50.dp)
-                            .width(6.dp)
-                            .height(122.dp)
+                            .padding(top = 58.dp)
+                            .width(5.5.dp)
+                            .height(115.dp)
                             .background(Color(0xFF111111), RoundedCornerShape(3.dp))
                     )
                 }
             } else {
-                // 木鱼 / 电子鼓 / 活动模式：真实固态打击动效
+                // 木鱼 / 电子鼓模式：纯白实心剪影 + 真实固态打击动效
                 Image(
                     painter = painterResource(id = state.currentMode.iconResId),
                     contentDescription = state.currentMode.displayName,
@@ -627,6 +627,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 onModeChange = { viewModel.setAppMode(it) },
                 onSubtitleChange = { viewModel.updateSubtitle(it) },
                 onVolumeChange = { viewModel.updateBgmVolume(it) },
+                onVibrationChange = { viewModel.updateVibrationMs(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
                 onResetCount = { viewModel.resetCount() },
                 onPickBgm = { audioPickerLauncher.launch(arrayOf("audio/*")) },

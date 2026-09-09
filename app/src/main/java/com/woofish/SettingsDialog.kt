@@ -20,6 +20,7 @@ fun SettingsDialog(
     onModeChange: (AppMode) -> Unit,
     onSubtitleChange: (String) -> Unit,
     onVolumeChange: (Float) -> Unit,
+    onVibrationChange: (Int) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit,
     onPickBgm: () -> Unit,
@@ -48,43 +49,41 @@ fun SettingsDialog(
                     .padding(top = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓 / 活动)
+                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    AppMode.entries.chunked(2).forEach { rowModes ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowModes.forEach { mode ->
-                                val isSelected = state.currentMode == mode
-                                Surface(
-                                    onClick = { onModeChange(mode) },
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
-                                    modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppMode.entries.forEach { mode ->
+                            val isSelected = state.currentMode == mode
+                            Surface(
+                                onClick = { onModeChange(mode) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(vertical = 10.dp)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.padding(vertical = 10.dp)
-                                    ) {
-                                        Text(
-                                            text = mode.displayName.replace("模式", ""),
-                                            fontSize = 13.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                                        )
-                                    }
+                                    Text(
+                                        text = mode.displayName.replace("模式", ""),
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // 2. 计数文案自定义 (默认正念，可任意修改)
+                // 2. 计时/计数文案自定义 (默认正念，强化计时标签)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = "计数显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    Text(text = "计时显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                     OutlinedTextField(
                         value = subtitleInput,
                         onValueChange = {
@@ -92,7 +91,7 @@ fun SettingsDialog(
                             onSubtitleChange(it)
                         },
                         singleLine = true,
-                        placeholder = { Text("例如：正念、功德、节拍、加油", fontSize = 13.sp, color = Color.DarkGray) },
+                        placeholder = { Text("例如：正念、计时、功德、节拍", fontSize = 13.sp, color = Color.DarkGray) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
@@ -101,12 +100,12 @@ fun SettingsDialog(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    // 常用快捷选项
+                    // 常用快捷选项：突出强化“计时”，移除“加油”
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        listOf("正念", "功德", "节拍", "律动", "加油", "助威", "计数").forEach { tag ->
+                        listOf("正念", "计时", "功德", "节拍", "律动", "计数").forEach { tag ->
                             Surface(
                                 onClick = {
                                     subtitleInput = tag
@@ -118,7 +117,8 @@ fun SettingsDialog(
                                 Text(
                                     text = tag,
                                     fontSize = 11.sp,
-                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else Color.Gray,
+                                    fontWeight = if (tag == "计时") FontWeight.Bold else FontWeight.Normal,
+                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else if (tag == "计时") Color.White else Color.Gray,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -126,7 +126,40 @@ fun SettingsDialog(
                     }
                 }
 
-                // 3. 本地背景音乐选择与管理
+                // 3. 敲击震动强度调节滑块 (0~80ms，默认40ms)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "敲击震动强度", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(
+                            text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (state.vibrationMs == 0) Color.Gray else Color(0xFFFFD54F)
+                        )
+                    }
+                    Slider(
+                        value = state.vibrationMs.toFloat(),
+                        onValueChange = { onVibrationChange(it.toInt()) },
+                        valueRange = 0f..80f,
+                        steps = 79,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFFFFD54F),
+                            activeTrackColor = Color(0xFFFFD54F),
+                            inactiveTrackColor = Color(0xFF333333)
+                        )
+                    )
+                    Text(
+                        text = "默认 40ms，支持 0~80ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                // 4. 本地背景音乐选择与管理
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -173,7 +206,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 4. 背景音乐音量调节滑块
+                // 5. 背景音乐音量调节滑块
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -193,7 +226,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 5. 全屏敲击模式
+                // 6. 全屏敲击模式
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -215,7 +248,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 6. 统计清零
+                // 7. 统计清零
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

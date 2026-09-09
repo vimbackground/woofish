@@ -4,7 +4,7 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 浑然一体的高级现代电子鼓腔主体 -->
+    <!-- 纯白浑然一体的鼓身实心外部轮廓（去除所有内部黑线与黑圈，保持极简禅意纯白） -->
     <path
         android:fillColor="#EEEEEE"
         android:pathData="M 50,18
@@ -14,21 +14,4 @@
                           C 32,84 21,77 19,66
                           L 15,34
                           C 15,25 24,18 50,18 Z" />
-
-    <!-- 鼓面边缘精致反显内嵌压圈（自然平滑，与鼓身浑然一体） -->
-    <path
-        android:strokeColor="#111111"
-        android:strokeWidth="2.4"
-        android:pathData="M 23,34
-                          C 23,28 35,24 50,24
-                          C 65,24 77,28 77,34
-                          C 77,40 65,44 50,44
-                          C 35,44 23,40 23,34 Z" />
-
-    <!-- 鼓腔正面简约层次腰线（轻度内凹光影线，取代原突兀的散乱点线圈） -->
-    <path
-        android:strokeColor="#111111"
-        android:strokeWidth="2.2"
-        android:strokeLineCap="round"
-        android:pathData="M 28,52 C 40,57 60,57 72,52" />
 </vector>

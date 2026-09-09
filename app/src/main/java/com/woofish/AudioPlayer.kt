@@ -14,7 +14,6 @@ class AudioPlayer(private val context: Context) {
     private val woodenFishSounds = mutableListOf<Int>()
     private val metronomeSounds = mutableListOf<Int>()
     private val drumSounds = mutableListOf<Int>()
-    private val eventSounds = mutableListOf<Int>()
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
 
@@ -47,40 +46,36 @@ class AudioPlayer(private val context: Context) {
         metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))
         metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_2, 1))
 
-        // 3. 电子鼓音效 (3 种：低音鼓、手鼓、非洲鼓)
+        // 3. 电子鼓音效 (3 种：低音鼓、真实拍中手鼓、非洲鼓)
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_kick, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_hand, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
-
-        // 4. 活动模式音效 (3 种：整齐拍掌、集体喊加油、集体怒吼)
-        eventSounds.add(soundPool.load(context, R.raw.sound_event_clap, 1))
-        eventSounds.add(soundPool.load(context, R.raw.sound_event_cheer, 1))
-        eventSounds.add(soundPool.load(context, R.raw.sound_event_roar, 1))
     }
 
-    fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false) {
+    fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 40) {
         val list = when (mode) {
             AppMode.WOODEN_FISH -> woodenFishSounds
             AppMode.METRONOME -> metronomeSounds
             AppMode.DRUM -> drumSounds
-            AppMode.EVENT -> eventSounds
         }
         val safeIndex = soundIndex.coerceIn(0, (list.size - 1).coerceAtLeast(0))
         if (safeIndex in list.indices) {
             soundPool.play(list[safeIndex], 1f, 1f, 1, 0, 1f)
         }
         if (isManual) {
-            vibrateManualKnock()
+            vibrateManualKnock(vibrationMs)
         }
     }
 
-    fun vibrateManualKnock() {
+    // 强力桌面物理震感：满功率(255振幅)驱动马达，手机放桌上单指敲击也能感知桌面震颤
+    fun vibrateManualKnock(durationMs: Int) {
+        if (durationMs <= 0) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(durationMs.toLong(), 255))
             } else {
                 @Suppress("DEPRECATION")
-                vibrator.vibrate(35)
+                vibrator.vibrate(durationMs.toLong())
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -88,7 +83,7 @@ class AudioPlayer(private val context: Context) {
     }
 
     fun playKnock(soundIndex: Int) {
-        playHit(AppMode.WOODEN_FISH, soundIndex, isManual = true)
+        playHit(AppMode.WOODEN_FISH, soundIndex, isManual = true, vibrationMs = 40)
     }
 
     fun isBgmPlaying(): Boolean = bgmPlayer?.isPlaying == true

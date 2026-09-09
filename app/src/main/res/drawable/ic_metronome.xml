@@ -4,29 +4,29 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 1. 节拍器浑然一体的实心机身 -->
+    <!-- 加大加宽的稳固纯白实心节拍器机身与底座色块 -->
     <path
         android:fillColor="#EEEEEE"
-        android:pathData="M 43,14
-                          C 47,13 53,13 57,14
-                          C 61,15 63,18 64,23
-                          L 78,76
-                          C 79.5,82 76,86 70,86
-                          C 58,86.5 42,86.5 30,86
-                          C 24,86 20.5,82 22,76
-                          L 36,23
-                          C 37,18 39,15 43,14 Z" />
+        android:pathData="M 38,10
+                          C 44,9 56,9 62,10
+                          C 66,11 68,14 69,18
+                          L 85,78
+                          C 87,84 83,88 77,88
+                          L 23,88
+                          C 17,88 13,84 15,78
+                          L 31,18
+                          C 32,14 34,11 38,10 Z" />
 
-    <!-- 2. 中间形状优化为一根纯粹的黑色粗线条摆杆 (指针) -->
+    <!-- 中间黑色粗线条摆针（居中静止，不超外部白区范围） -->
     <path
         android:strokeColor="#111111"
         android:strokeWidth="5"
         android:strokeLineCap="round"
-        android:pathData="M 50,72 L 50,22" />
+        android:pathData="M 50,74 L 50,22" />
 
-    <!-- 3. 内部黑色反显底部摆轴支点 -->
+    <!-- 内部黑色反显底部摆轴支点 -->
     <path
         android:fillColor="#111111"
-        android:pathData="M 50,72
-                          A 4.5,4.5 0 1,1 49.99,72 Z" />
+        android:pathData="M 50,74
+                          A 4.5,4.5 0 1,1 49.99,74 Z" />
 </vector>

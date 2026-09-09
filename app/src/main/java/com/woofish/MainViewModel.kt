@@ -29,7 +29,8 @@ data class WoodenFishUiState(
     val bpm: Int = 60,
     val autoKnockIntervalMs: Long = 1000L,
     val showAutoKnockDialog: Boolean = false,
-    val knockTrigger: Long = 0L // 用于驱动受力回弹与节拍摆动动画
+    val knockTrigger: Long = 0L, // 用于驱动受力回弹与节拍摆动动画
+    val vibrationMs: Int = 40 // 敲击震动强度 (0~80ms，默认40ms)
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -40,6 +41,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
+    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 40)
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -53,7 +55,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
             isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
             bpm = initialBpm,
-            autoKnockIntervalMs = (60000L / initialBpm).coerceIn(200L, 2000L)
+            autoKnockIntervalMs = (60000L / initialBpm).coerceIn(200L, 2000L),
+            vibrationMs = initialVibrationMs
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -61,7 +64,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onHit(isManual: Boolean = false) {
         val mode = _uiState.value.currentMode
         val sIndex = _uiState.value.soundIndex
-        audioPlayer.playHit(mode, sIndex, isManual = isManual)
+        val vMs = _uiState.value.vibrationMs
+        audioPlayer.playHit(mode, sIndex, isManual = isManual, vibrationMs = vMs)
         val newCount = _uiState.value.count + 1
         _uiState.value = _uiState.value.copy(
             count = newCount,
@@ -102,7 +106,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val nextIndex = (_uiState.value.soundIndex + 1) % maxSounds
         _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
         prefs.edit().putInt("key_sound_${currentMode.id}", nextIndex).apply()
-        audioPlayer.playHit(currentMode, nextIndex, isManual = true)
+        audioPlayer.playHit(currentMode, nextIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
     }
 
     fun updateSubtitle(text: String) {
@@ -110,6 +114,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val newSubtitle = if (trimmed.isEmpty()) _uiState.value.currentMode.defaultSubtitle else trimmed
         _uiState.value = _uiState.value.copy(subtitle = newSubtitle)
         prefs.edit().putString("key_subtitle", newSubtitle).apply()
+    }
+
+    fun updateVibrationMs(ms: Int) {
+        val safeMs = ms.coerceIn(0, 80)
+        _uiState.value = _uiState.value.copy(vibrationMs = safeMs)
+        prefs.edit().putInt("key_vibration_ms", safeMs).apply()
+        // 调节滑块时轻触预览震感
+        if (safeMs > 0) {
+            audioPlayer.vibrateManualKnock(safeMs)
+        }
     }
 
     fun setBpm(newBpm: Int) {
