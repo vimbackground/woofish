@@ -11,7 +11,7 @@ enum class AppMode(
         id = "wooden_fish",
         displayName = "木鱼模式",
         defaultSubtitle = "正念",
-        soundNames = listOf("沉厚木鱼", "清脆木鱼", "禅韵木鱼"),
+        soundNames = listOf("禅韵木鱼", "沉厚木鱼", "清脆木鱼"),
         iconResId = R.drawable.ic_wooden_fish
     ),
     METRONOME(
@@ -25,8 +25,15 @@ enum class AppMode(
         id = "drum",
         displayName = "电子鼓模式",
         defaultSubtitle = "律动",
-        soundNames = listOf("低音鼓", "中式大鼓", "非洲鼓"),
+        soundNames = listOf("低音鼓", "手鼓", "非洲鼓"),
         iconResId = R.drawable.ic_drum
+    ),
+    EVENT(
+        id = "event",
+        displayName = "活动模式",
+        defaultSubtitle = "加油",
+        soundNames = listOf("整齐拍掌", "集体喊加油", "集体怒吼"),
+        iconResId = R.drawable.ic_event
     );
 
     fun getTempoPresets(): List<Pair<String, Int>> = when (this) {
@@ -34,8 +41,8 @@ enum class AppMode(
             "禅修 30" to 30,
             "沉静 60" to 60,
             "舒缓 90" to 90,
-            "适中 120" to 120,
-            "清心 150" to 150
+            "诵经 120" to 120,
+            "精进 150" to 150
         )
         METRONOME -> listOf(
             "广板 30" to 30,
@@ -51,9 +58,16 @@ enum class AppMode(
             "动感 120" to 120,
             "狂热 150" to 150
         )
+        EVENT -> listOf(
+            "慢热 30" to 30,
+            "齐声 60" to 60,
+            "助威 90" to 90,
+            "呐喊 120" to 120,
+            "狂欢 150" to 150
+        )
     }
 
     companion object {
-        fun fromId(id: String): AppMode = entries.firstOrNull { it.id == id } ?: METRONOME
+        fun fromId(id: String): AppMode = entries.firstOrNull { it.id == id } ?: WOODEN_FISH
     }
 }

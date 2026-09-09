@@ -5,6 +5,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -24,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -96,7 +98,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     LaunchedEffect(state.knockTrigger) {
         if (state.knockTrigger > 0L) {
             isAutoBouncing = true
-            delay(100)
+            delay(80)
             isAutoBouncing = false
         }
     }
@@ -104,25 +106,35 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     val isKnocked = isTouchDown || isAutoBouncing
     val shouldAnimate = state.isAnimationEnabled && isKnocked
 
-    val scaleX by animateFloatAsState(
-        targetValue = if (shouldAnimate) 1.06f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "scaleX"
+    // -------------------------------------------------------------
+    // 实木/鼓面物理打击动效（去除果冻卡通横向拉伸，呈现稳重微下沉与无迟滞回弹）
+    // -------------------------------------------------------------
+    val impactScale by animateFloatAsState(
+        targetValue = if (shouldAnimate) 0.965f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "impactScale"
     )
-    val scaleY by animateFloatAsState(
-        targetValue = if (shouldAnimate) 0.90f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "scaleY"
+    val impactOffsetY by animateFloatAsState(
+        targetValue = if (shouldAnimate) 4f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "impactOffsetY"
     )
-    val offsetY by animateFloatAsState(
-        targetValue = if (shouldAnimate) 12f else 0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "offsetY"
-    )
-    val rotation by animateFloatAsState(
-        targetValue = if (shouldAnimate) -2.5f else 0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "rotation"
+
+    // -------------------------------------------------------------
+    // 节拍器专属中间粗线条左右乒乓反复摆动动效
+    // -------------------------------------------------------------
+    val metronomeTargetAngle = if (state.count == 0L) {
+        0f
+    } else if (state.count % 2L == 1L) {
+        20f
+    } else {
+        -20f
+    }
+    val metronomeAnimDuration = (state.autoKnockIntervalMs * 0.85f).toInt().coerceIn(120, 500)
+    val metronomeAngle by animateFloatAsState(
+        targetValue = metronomeTargetAngle,
+        animationSpec = tween(durationMillis = metronomeAnimDuration, easing = FastOutSlowInEasing),
+        label = "metronomeAngle"
     )
 
     Box(
@@ -131,7 +143,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             .background(Color(0xFF111111))
             .systemBarsPadding()
     ) {
-        // 全屏点击响应区域（全屏模式下，响应顶栏下方的整个屏幕区域，避开顶栏按钮以免设置时误触发敲击发声）
+        // 全屏点击响应区域
+        // 需求5：自动敲击状态下点击屏幕不发声且立即停止自动敲击；非自动敲击状态下才为手动敲击发声
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -139,8 +152,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 .detectInstantTap(
                     enabled = state.isFullScreenTapEnabled,
                     onDown = {
-                        isTouchDown = true
-                        viewModel.onHit()
+                        if (state.isAutoKnockEnabled) {
+                            viewModel.toggleAutoKnock(false)
+                        } else {
+                            isTouchDown = true
+                            viewModel.onManualHit()
+                        }
                     },
                     onUp = {
                         isTouchDown = false
@@ -188,7 +205,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 2. 物理打击形变动效开关
+                // 2. 物理打击动效开关
                 IconButton(
                     onClick = { viewModel.toggleAnimation() },
                     modifier = Modifier.size(40.dp)
@@ -306,34 +323,73 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
 
         // -------------------------------------------------------------
-        // 3. 居中乐器主体（根据模式呈现木鱼、节拍器、鼓，敲击时下压回弹）
+        // 3. 居中乐器主体
+        // 节拍器模式呈现稳定机身 + 中间粗线条乒乓反复摆动
+        // 其他模式（木鱼、电子鼓、活动）呈现稳重大气实物打击动效
         // -------------------------------------------------------------
-        Image(
-            painter = painterResource(id = state.currentMode.iconResId),
-            contentDescription = state.currentMode.displayName,
+        Box(
             modifier = Modifier
                 .size(240.dp)
                 .align(Alignment.Center)
-                .graphicsLayer {
-                    this.scaleX = scaleX
-                    this.scaleY = scaleY
-                    this.translationY = offsetY
-                    this.rotationZ = rotation
-                }
                 .detectInstantTap(
                     enabled = !state.isFullScreenTapEnabled,
                     onDown = {
-                        isTouchDown = true
-                        viewModel.onHit()
+                        if (state.isAutoKnockEnabled) {
+                            viewModel.toggleAutoKnock(false)
+                        } else {
+                            isTouchDown = true
+                            viewModel.onManualHit()
+                        }
                     },
                     onUp = {
                         isTouchDown = false
                     }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (state.currentMode == AppMode.METRONOME) {
+                // 节拍器模式：机身保持稳定
+                Image(
+                    painter = painterResource(id = R.drawable.ic_metronome_body),
+                    contentDescription = "节拍器机身",
+                    modifier = Modifier.fillMaxSize()
                 )
-        )
+                // 中间形状优化为一根粗线条摆针，一拍在左一拍在右，乒乓反复摆动
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            rotationZ = metronomeAngle
+                            transformOrigin = TransformOrigin(0.5f, 0.72f)
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 50.dp)
+                            .width(6.dp)
+                            .height(122.dp)
+                            .background(Color(0xFF111111), RoundedCornerShape(3.dp))
+                    )
+                }
+            } else {
+                // 木鱼 / 电子鼓 / 活动模式：真实固态打击动效
+                Image(
+                    painter = painterResource(id = state.currentMode.iconResId),
+                    contentDescription = state.currentMode.displayName,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            this.scaleX = impactScale
+                            this.scaleY = impactScale
+                            this.translationY = impactOffsetY
+                        }
+                )
+            }
+        }
 
         // -------------------------------------------------------------
-        // 4. 软件主界面 6 个自动敲击快捷直控按钮（灰框、白字、无底色，支持清屏隐藏，视觉均衡）
+        // 4. 软件主界面 6 个自动敲击快捷直控按钮（加大按钮尺寸与触控面积）
         // -------------------------------------------------------------
         var showQuickCustomBpmDialog by remember { mutableStateOf(false) }
         var quickCustomBpmText by remember { mutableStateOf(state.bpm.toString()) }
@@ -352,16 +408,16 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(start = 20.dp, end = 20.dp, bottom = 32.dp)
+                .padding(start = 18.dp, end = 18.dp, bottom = 28.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 上排 3 档速度 (30, 60, 90)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     topRowPresets.forEach { (label, value) ->
                         val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
@@ -374,15 +430,15 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                     viewModel.toggleAutoKnock(true)
                                 }
                             },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(10.dp),
                             color = Color.Transparent,
                             border = BorderStroke(
-                                width = 1.dp,
-                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF666666)
+                                width = 1.2.dp,
+                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
                             ),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(38.dp)
+                                .height(48.dp)
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -391,8 +447,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                 Text(
                                     text = if (isPlayingThis) "⏸ $label" else label,
                                     color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Normal
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
                                 )
                             }
                         }
@@ -402,7 +458,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 // 下排 3 档速度 (120, 150, 自定义)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     bottomRowPresets.forEach { (label, value) ->
                         val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
@@ -415,15 +471,15 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                     viewModel.toggleAutoKnock(true)
                                 }
                             },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(10.dp),
                             color = Color.Transparent,
                             border = BorderStroke(
-                                width = 1.dp,
-                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF666666)
+                                width = 1.2.dp,
+                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
                             ),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(38.dp)
+                                .height(48.dp)
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -432,8 +488,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                 Text(
                                     text = if (isPlayingThis) "⏸ $label" else label,
                                     color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Normal
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
                                 )
                             }
                         }
@@ -450,15 +506,15 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                 showQuickCustomBpmDialog = true
                             }
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = Color.Transparent,
                         border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF666666)
+                            width = 1.2.dp,
+                            color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(38.dp)
+                            .height(48.dp)
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -468,8 +524,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             Text(
                                 text = if (isPlayingCustom) "⏸ $customText" else customText,
                                 color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Normal
+                                fontSize = 13.5.sp,
+                                fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium
                             )
                         }
                     }
@@ -562,7 +618,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
 
         // -------------------------------------------------------------
-        // 5. 软件设置弹窗
+        // 6. 软件设置弹窗
         // -------------------------------------------------------------
         if (state.showSettings) {
             SettingsDialog(

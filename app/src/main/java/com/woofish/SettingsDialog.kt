@@ -48,32 +48,34 @@ fun SettingsDialog(
                     .padding(top = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓)
+                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓 / 活动)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        AppMode.entries.forEach { mode ->
-                            val isSelected = state.currentMode == mode
-                            Surface(
-                                onClick = { onModeChange(mode) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.padding(vertical = 10.dp)
+                    AppMode.entries.chunked(2).forEach { rowModes ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowModes.forEach { mode ->
+                                val isSelected = state.currentMode == mode
+                                Surface(
+                                    onClick = { onModeChange(mode) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(
-                                        text = mode.displayName.replace("模式", ""),
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                                    )
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(vertical = 10.dp)
+                                    ) {
+                                        Text(
+                                            text = mode.displayName.replace("模式", ""),
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -90,7 +92,7 @@ fun SettingsDialog(
                             onSubtitleChange(it)
                         },
                         singleLine = true,
-                        placeholder = { Text("例如：正念、功德、节拍", fontSize = 13.sp, color = Color.DarkGray) },
+                        placeholder = { Text("例如：正念、功德、节拍、加油", fontSize = 13.sp, color = Color.DarkGray) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
@@ -104,7 +106,7 @@ fun SettingsDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        listOf("正念", "功德", "节拍", "律动", "计数").forEach { tag ->
+                        listOf("正念", "功德", "节拍", "律动", "加油", "助威", "计数").forEach { tag ->
                             Surface(
                                 onClick = {
                                     subtitleInput = tag

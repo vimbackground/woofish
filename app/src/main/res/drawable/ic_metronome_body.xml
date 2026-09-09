@@ -4,7 +4,7 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 1. 节拍器浑然一体的实心机身 -->
+    <!-- 节拍器浑然一体的实心机身（纯白实心底色，圆润边角） -->
     <path
         android:fillColor="#EEEEEE"
         android:pathData="M 43,14
@@ -17,14 +17,7 @@
                           L 36,23
                           C 37,18 39,15 43,14 Z" />
 
-    <!-- 2. 中间形状优化为一根纯粹的黑色粗线条摆杆 (指针) -->
-    <path
-        android:strokeColor="#111111"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
-        android:pathData="M 50,72 L 50,22" />
-
-    <!-- 3. 内部黑色反显底部摆轴支点 -->
+    <!-- 内部黑色反显底部摆轴支点 -->
     <path
         android:fillColor="#111111"
         android:pathData="M 50,72

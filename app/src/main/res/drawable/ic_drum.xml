@@ -4,37 +4,31 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 1. 浑然一体的圆润纯白色实心鼓身（无锐角、去除下部分离方框与杂线） -->
+    <!-- 浑然一体的高级现代电子鼓腔主体 -->
     <path
         android:fillColor="#EEEEEE"
-        android:pathData="M 50,20
-                          C 78,20 86,27 86,35
-                          L 82,65
-                          C 80,76 68,83 50,83
-                          C 32,83 20,76 18,65
-                          L 14,35
-                          C 14,27 22,20 50,20 Z" />
+        android:pathData="M 50,18
+                          C 76,18 85,25 85,34
+                          L 81,66
+                          C 79,77 68,84 50,84
+                          C 32,84 21,77 19,66
+                          L 15,34
+                          C 15,25 24,18 50,18 Z" />
 
-    <!-- 2. 内部黑色反显鼓面击打感应圈 -->
+    <!-- 鼓面边缘精致反显内嵌压圈（自然平滑，与鼓身浑然一体） -->
     <path
         android:strokeColor="#111111"
-        android:strokeWidth="2.8"
-        android:pathData="M 50,25
-                          C 72,25 79,29.5 79,35
-                          C 79,40.5 72,45 50,45
-                          C 28,45 21,40.5 21,35
-                          C 21,29.5 28,25 50,25 Z" />
+        android:strokeWidth="2.4"
+        android:pathData="M 23,34
+                          C 23,28 35,24 50,24
+                          C 65,24 77,28 77,34
+                          C 77,40 65,44 50,44
+                          C 35,44 23,40 23,34 Z" />
 
-    <!-- 3. 内部黑色反显打击中心圆 -->
-    <path
-        android:fillColor="#111111"
-        android:pathData="M 50,31
-                          A 4,4 0 1,1 49.99,31 Z" />
-
-    <!-- 4. 内部黑色反显下部圆润律动弧线 -->
+    <!-- 鼓腔正面简约层次腰线（轻度内凹光影线，取代原突兀的散乱点线圈） -->
     <path
         android:strokeColor="#111111"
-        android:strokeWidth="2.8"
+        android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:pathData="M 33,59 C 43,64 57,64 67,59" />
+        android:pathData="M 28,52 C 40,57 60,57 72,52" />
 </vector>

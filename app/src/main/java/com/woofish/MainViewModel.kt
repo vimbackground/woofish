@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 
 data class WoodenFishUiState(
     val count: Long = 0,
-    val currentMode: AppMode = AppMode.METRONOME,
-    val subtitle: String = "节拍",
+    val currentMode: AppMode = AppMode.WOODEN_FISH,
+    val subtitle: String = "正念",
     val isBgmPlaying: Boolean = false,
     val bgmVolume: Float = 0.3f,
     val customBgmUri: String? = null,
@@ -29,7 +29,7 @@ data class WoodenFishUiState(
     val bpm: Int = 60,
     val autoKnockIntervalMs: Long = 1000L,
     val showAutoKnockDialog: Boolean = false,
-    val knockTrigger: Long = 0L // 用于驱动木鱼/乐器受力下压回弹动画
+    val knockTrigger: Long = 0L // 用于驱动受力回弹与节拍摆动动画
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -38,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var autoKnockJob: Job? = null
 
-    private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.METRONOME.id) ?: AppMode.METRONOME.id)
+    private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
 
     private val _uiState = MutableStateFlow(
@@ -58,10 +58,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
 
-    fun onHit() {
+    fun onHit(isManual: Boolean = false) {
         val mode = _uiState.value.currentMode
         val sIndex = _uiState.value.soundIndex
-        audioPlayer.playHit(mode, sIndex)
+        audioPlayer.playHit(mode, sIndex, isManual = isManual)
         val newCount = _uiState.value.count + 1
         _uiState.value = _uiState.value.copy(
             count = newCount,
@@ -70,15 +70,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putLong("key_count", newCount).apply()
     }
 
+    fun onManualHit() {
+        onHit(isManual = true)
+    }
+
     // 兼容原敲击方法名
     fun onKnock() {
-        onHit()
+        onManualHit()
     }
 
     fun setAppMode(mode: AppMode) {
         if (mode == _uiState.value.currentMode) return
         val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", 0)
-        // 模式切换时，计数显示文案自动调整：木鱼（正念），节拍器（节拍），电子鼓（律动）
+        // 模式切换时，计数显示文案自动调整
         val newSubtitle = mode.defaultSubtitle
 
         _uiState.value = _uiState.value.copy(
@@ -98,7 +102,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val nextIndex = (_uiState.value.soundIndex + 1) % maxSounds
         _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
         prefs.edit().putInt("key_sound_${currentMode.id}", nextIndex).apply()
-        audioPlayer.playHit(currentMode, nextIndex)
+        audioPlayer.playHit(currentMode, nextIndex, isManual = true)
     }
 
     fun updateSubtitle(text: String) {
@@ -186,7 +190,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (nextState) {
             autoKnockJob = viewModelScope.launch {
                 while (isActive) {
-                    onHit()
+                    onHit(isManual = false)
                     delay(_uiState.value.autoKnockIntervalMs)
                 }
             }

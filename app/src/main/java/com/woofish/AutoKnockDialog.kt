@@ -96,6 +96,7 @@ fun AutoKnockDialog(
                     AppMode.METRONOME -> "自动节拍器"
                     AppMode.DRUM -> "自动鼓点节奏"
                     AppMode.WOODEN_FISH -> "自动敲击木鱼"
+                    AppMode.EVENT -> "自动活动助威"
                 },
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
