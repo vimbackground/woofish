@@ -4,32 +4,41 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 纯白色、平面、极简机械节拍器图标 -->
-    <!-- 1. 节拍器塔形金字塔主体机身 (外框剪影) -->
+    <!-- 1. 浑然一体的圆润纯白色实心机身（无锐角、去除底部分离线条与底座） -->
     <path
         android:fillColor="#EEEEEE"
-        android:pathData="M 36,12 L 64,12 L 80,82 L 20,82 Z
-                         M 39,20 L 25,76 L 75,76 L 61,20 Z"/>
+        android:pathData="M 43,14
+                          C 47,13 53,13 57,14
+                          C 61,15 63,18 64,23
+                          L 78,76
+                          C 79.5,82 76,86 70,86
+                          C 58,86.5 42,86.5 30,86
+                          C 24,86 20.5,82 22,76
+                          L 36,23
+                          C 37,18 39,15 43,14 Z" />
 
-    <!-- 2. 底部极简支撑底座 -->
+    <!-- 2. 内部黑色反显中心摆杆 (指针) -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 16,84 H 84 V 89 H 16 Z"/>
-
-    <!-- 3. 中心金属摆杆 (微倾斜律动姿态) -->
-    <path
-        android:strokeColor="#EEEEEE"
-        android:strokeWidth="3"
+        android:strokeColor="#111111"
+        android:strokeWidth="3.2"
         android:strokeLineCap="round"
-        android:pathData="M 50,73 L 57,24"/>
+        android:pathData="M 50,73 L 57,25" />
 
-    <!-- 4. 摆杆滑动砝码重锤 -->
+    <!-- 3. 内部黑色反显摆杆滑动砝码 -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 49,42 L 59,40 L 61,48 L 51,50 Z"/>
+        android:fillColor="#111111"
+        android:pathData="M 47.5,41
+                          C 47,39.5 48.5,38.5 50.5,38.2
+                          L 59.5,36.5
+                          C 61.5,36.2 62.5,37.5 62,39
+                          L 60.5,45
+                          C 60,46.5 58.5,47.5 56.5,47.8
+                          L 47.5,49.5
+                          C 45.5,49.8 44.5,48.5 45,47 Z" />
 
-    <!-- 5. 底部中心摆轴支点 -->
+    <!-- 4. 内部黑色反显底部摆轴支点 -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 50,71 A 3,3 0 1,1 49.99,71 Z"/>
+        android:fillColor="#111111"
+        android:pathData="M 50,68
+                          A 4.5,4.5 0 1,1 49.99,68 Z" />
 </vector>

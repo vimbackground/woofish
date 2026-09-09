@@ -37,9 +37,10 @@ class AudioPlayer(private val context: Context) {
             .setAudioAttributes(attributes)
             .build()
 
-        // 1. 木鱼音效 (2 种)
-        woodenFishSounds.add(soundPool.load(context, R.raw.sound_1, 1))
-        woodenFishSounds.add(soundPool.load(context, R.raw.sound_2, 1))
+        // 1. 木鱼音效 (3 种)
+        woodenFishSounds.add(soundPool.load(context, R.raw.sound_fish_1, 1))
+        woodenFishSounds.add(soundPool.load(context, R.raw.sound_fish_2, 1))
+        woodenFishSounds.add(soundPool.load(context, R.raw.sound_fish_3, 1))
 
         // 2. 节拍器音效 (2 种)
         metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))

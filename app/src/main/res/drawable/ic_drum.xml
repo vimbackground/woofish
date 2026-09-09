@@ -4,29 +4,37 @@
     android:viewportWidth="100"
     android:viewportHeight="100">
     
-    <!-- 纯白色、平面、极简乐器鼓矢量图标 -->
-    <!-- 1. 顶部椭圆打击鼓面 -->
+    <!-- 1. 浑然一体的圆润纯白色实心鼓身（无锐角、去除下部分离方框与杂线） -->
     <path
         android:fillColor="#EEEEEE"
-        android:pathData="M 50,22 C 26,22 14,28 14,35 C 14,42 26,48 50,48 C 74,48 86,42 86,35 C 86,28 74,22 50,22 Z
-                         M 50,25 C 71,25 82,30 82,35 C 82,40 71,45 50,45 C 29,45 18,40 18,35 C 18,30 29,25 50,25 Z"/>
+        android:pathData="M 50,20
+                          C 78,20 86,27 86,35
+                          L 82,65
+                          C 80,76 68,83 50,83
+                          C 32,83 20,76 18,65
+                          L 14,35
+                          C 14,27 22,20 50,20 Z" />
 
-    <!-- 2. 鼓身外框与底部圆弧剪影 -->
+    <!-- 2. 内部黑色反显鼓面击打感应圈 -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 14,35 L 14,68 C 14,81 86,81 86,68 L 86,35 L 82,35 L 82,67 C 82,76 18,76 18,67 L 18,35 Z"/>
+        android:strokeColor="#111111"
+        android:strokeWidth="2.8"
+        android:pathData="M 50,25
+                          C 72,25 79,29.5 79,35
+                          C 79,40.5 72,45 50,45
+                          C 28,45 21,40.5 21,35
+                          C 21,29.5 28,25 50,25 Z" />
 
-    <!-- 3. 底部外圈支撑边框 -->
+    <!-- 3. 内部黑色反显打击中心圆 -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 14,68 C 14,81 86,81 86,68 L 86,72 C 86,85 14,85 14,72 Z"/>
+        android:fillColor="#111111"
+        android:pathData="M 50,31
+                          A 4,4 0 1,1 49.99,31 Z" />
 
-    <!-- 4. 鼓身极简平面调音拉杆 (竖直线条) -->
+    <!-- 4. 内部黑色反显下部圆润律动弧线 -->
     <path
-        android:strokeColor="#EEEEEE"
-        android:strokeWidth="2.5"
+        android:strokeColor="#111111"
+        android:strokeWidth="2.8"
         android:strokeLineCap="round"
-        android:pathData="M 30,44 L 30,73
-                         M 50,47 L 50,76
-                         M 70,44 L 70,73"/>
+        android:pathData="M 33,59 C 43,64 57,64 67,59" />
 </vector>

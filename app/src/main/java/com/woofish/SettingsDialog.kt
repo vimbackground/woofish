@@ -104,7 +104,7 @@ fun SettingsDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        listOf("正念", "功德", "节拍", "律动", "解压").forEach { tag ->
+                        listOf("正念", "功德", "节拍", "律动", "计数").forEach { tag ->
                             Surface(
                                 onClick = {
                                     subtitleInput = tag

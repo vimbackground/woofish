@@ -9,6 +9,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -16,6 +17,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -329,7 +333,224 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         )
 
         // -------------------------------------------------------------
-        // 4. 自动节奏/BPM调节弹窗
+        // 4. 软件主界面 6 个自动敲击快捷直控按钮（灰框、白字、无底色，支持清屏隐藏，视觉均衡）
+        // -------------------------------------------------------------
+        var showQuickCustomBpmDialog by remember { mutableStateOf(false) }
+        var quickCustomBpmText by remember { mutableStateOf(state.bpm.toString()) }
+
+        val tempoPresets = remember(state.currentMode) {
+            state.currentMode.getTempoPresets()
+        }
+        val topRowPresets = tempoPresets.take(3)
+        val bottomRowPresets = tempoPresets.drop(3)
+        val isCustomBpm = state.bpm !in listOf(30, 60, 90, 120, 150)
+
+        AnimatedVisibility(
+            visible = !state.isZenMode,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(start = 20.dp, end = 20.dp, bottom = 32.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 上排 3 档速度 (30, 60, 90)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    topRowPresets.forEach { (label, value) ->
+                        val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                        Surface(
+                            onClick = {
+                                if (isPlayingThis) {
+                                    viewModel.toggleAutoKnock(false)
+                                } else {
+                                    viewModel.setBpm(value)
+                                    viewModel.toggleAutoKnock(true)
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF666666)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text(
+                                    text = if (isPlayingThis) "⏸ $label" else label,
+                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 下排 3 档速度 (120, 150, 自定义)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    bottomRowPresets.forEach { (label, value) ->
+                        val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                        Surface(
+                            onClick = {
+                                if (isPlayingThis) {
+                                    viewModel.toggleAutoKnock(false)
+                                } else {
+                                    viewModel.setBpm(value)
+                                    viewModel.toggleAutoKnock(true)
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF666666)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text(
+                                    text = if (isPlayingThis) "⏸ $label" else label,
+                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+
+                    // 第 6 档：自定义
+                    val isPlayingCustom = state.isAutoKnockEnabled && isCustomBpm
+                    Surface(
+                        onClick = {
+                            if (isPlayingCustom) {
+                                viewModel.toggleAutoKnock(false)
+                            } else {
+                                quickCustomBpmText = state.bpm.toString()
+                                showQuickCustomBpmDialog = true
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Transparent,
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF666666)
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            val customText = if (isCustomBpm) "自定义 ${state.bpm}" else "自定义 ✍️"
+                            Text(
+                                text = if (isPlayingCustom) "⏸ $customText" else customText,
+                                color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 快速自定义 BPM 弹窗
+        if (showQuickCustomBpmDialog) {
+            AlertDialog(
+                onDismissRequest = { showQuickCustomBpmDialog = false },
+                containerColor = Color(0xFF262626),
+                title = {
+                    Text(
+                        text = "自定义节拍速度 (BPM)",
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "请输入 30 到 300 之间的每分钟拍数：",
+                            fontSize = 13.sp,
+                            color = Color.LightGray
+                        )
+                        OutlinedTextField(
+                            value = quickCustomBpmText,
+                            onValueChange = {
+                                if (it.length <= 4 && it.all { ch -> ch.isDigit() }) {
+                                    quickCustomBpmText = it
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    val parsed = quickCustomBpmText.toIntOrNull()
+                                    if (parsed != null && parsed in 30..300) {
+                                        viewModel.setBpm(parsed)
+                                        viewModel.toggleAutoKnock(true)
+                                        showQuickCustomBpmDialog = false
+                                    }
+                                }
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD54F),
+                                unfocusedBorderColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val parsed = quickCustomBpmText.toIntOrNull()
+                            if (parsed != null && parsed in 30..300) {
+                                viewModel.setBpm(parsed)
+                                viewModel.toggleAutoKnock(true)
+                                showQuickCustomBpmDialog = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                    ) {
+                        Text(text = "开始", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showQuickCustomBpmDialog = false }) {
+                        Text(text = "取消", color = Color.Gray)
+                    }
+                }
+            )
+        }
+
+        // -------------------------------------------------------------
+        // 5. 自动节奏/BPM调节弹窗
         // -------------------------------------------------------------
         if (state.showAutoKnockDialog) {
             AutoKnockDialog(

@@ -177,40 +177,11 @@ fun AutoKnockDialog(
                     )
 
                     // 音乐常见节奏预设与自定义输入快捷栏（两排布局）
-                    val (topRowPresets, bottomRowPresets) = remember(state.currentMode) {
-                        val top = when (state.currentMode) {
-                            AppMode.METRONOME -> listOf(
-                                "慢板 56" to 56,    // Lento
-                                "柔板 72" to 72,    // Adagio
-                                "行板 88" to 88     // Andante
-                            )
-                            AppMode.WOODEN_FISH -> listOf(
-                                "禅定 56" to 56,
-                                "沉静 72" to 72,
-                                "舒缓 88" to 88
-                            )
-                            AppMode.DRUM -> listOf(
-                                "慢摇 56" to 56,
-                                "柔和 72" to 72,
-                                "律动 88" to 88
-                            )
-                        }
-                        val bottom = when (state.currentMode) {
-                            AppMode.METRONOME -> listOf(
-                                "中板 108" to 108,  // Moderato
-                                "快板 132" to 132   // Allegro
-                            )
-                            AppMode.WOODEN_FISH -> listOf(
-                                "适中 108" to 108,
-                                "清心 132" to 132
-                            )
-                            AppMode.DRUM -> listOf(
-                                "中速 108" to 108,
-                                "动感 132" to 132
-                            )
-                        }
-                        top to bottom
+                    val allPresets = remember(state.currentMode) {
+                        state.currentMode.getTempoPresets()
                     }
+                    val topRowPresets = allPresets.take(3)
+                    val bottomRowPresets = allPresets.drop(3)
 
                     Text(text = "常用节拍速度：", fontSize = 12.sp, color = Color.Gray)
 
