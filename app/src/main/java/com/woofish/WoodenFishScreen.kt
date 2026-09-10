@@ -47,7 +47,8 @@ fun Modifier.detectInstantTap(
 ): Modifier = if (enabled) {
     this.pointerInput(enabled) {
         awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = false)
+            down.consume()
             onDown()
             waitForUpOrCancellation()
             onUp()

@@ -1,9 +1,11 @@
 package com.woofish
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,52 +89,7 @@ fun SettingsDialog(
                     }
                 }
 
-                // 2. 计时/计数文案自定义 (默认正念，强化计时标签)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = "计时显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    OutlinedTextField(
-                        value = subtitleInput,
-                        onValueChange = {
-                            subtitleInput = it
-                            onSubtitleChange(it)
-                        },
-                        singleLine = true,
-                        placeholder = { Text("例如：正念、计时、功德、节拍", fontSize = 13.sp, color = Color.DarkGray) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFFFFD54F),
-                            unfocusedBorderColor = Color(0xFF444444)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    // 常用快捷选项：突出强化“计时”，移除“加油”
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf("正念", "计时", "功德", "节拍", "律动", "计数").forEach { tag ->
-                            Surface(
-                                onClick = {
-                                    subtitleInput = tag
-                                    onSubtitleChange(tag)
-                                },
-                                shape = RoundedCornerShape(6.dp),
-                                color = if (subtitleInput == tag) Color(0xFF3A301D) else Color(0xFF262626)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (tag == "计时") FontWeight.Bold else FontWeight.Normal,
-                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else if (tag == "计时") Color.White else Color.Gray,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 3. 本地背景音乐选择与管理
+                // 2. 本地背景音乐选择与管理
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -177,7 +136,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 4. 背景音乐音量调节滑块
+                // 3. 背景音乐音量调节滑块
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -197,7 +156,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 5. 敲击震动强度调节滑块 (0~200ms，默认80ms，位于背景音乐设置下方)
+                // 4. 敲击震动强度调节滑块 (0~500ms，默认120ms，位于背景音乐下方)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -215,8 +174,8 @@ fun SettingsDialog(
                     Slider(
                         value = state.vibrationMs.toFloat(),
                         onValueChange = { onVibrationChange(it.toInt()) },
-                        valueRange = 0f..200f,
-                        steps = 199,
+                        valueRange = 0f..500f,
+                        steps = 499,
                         colors = SliderDefaults.colors(
                             thumbColor = Color(0xFFFFD54F),
                             activeTrackColor = Color(0xFFFFD54F),
@@ -224,10 +183,62 @@ fun SettingsDialog(
                         )
                     )
                     Text(
-                        text = "默认 80ms，支持 0~200ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
+                        text = "默认 120ms，支持 0~500ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
                         fontSize = 11.sp,
                         color = Color.Gray
                     )
+                }
+
+                // 5. 计时显示文案自定义 (置于背景音乐与震动强度之后，输入框精简紧凑)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "计时显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                            .border(1.dp, Color(0xFF444444), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (subtitleInput.isEmpty()) {
+                            Text("例如：正念、计时、功德、节拍", fontSize = 13.sp, color = Color(0xFF666666))
+                        }
+                        BasicTextField(
+                            value = subtitleInput,
+                            onValueChange = {
+                                subtitleInput = it
+                                onSubtitleChange(it)
+                            },
+                            singleLine = true,
+                            textStyle = TextStyle(color = Color.White, fontSize = 13.5.sp),
+                            cursorBrush = SolidColor(Color(0xFFFFD54F)),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    // 常用快捷选项
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf("正念", "计时", "功德", "节拍", "律动", "计数").forEach { tag ->
+                            Surface(
+                                onClick = {
+                                    subtitleInput = tag
+                                    onSubtitleChange(tag)
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (subtitleInput == tag) Color(0xFF3A301D) else Color(0xFF262626)
+                            ) {
+                                Text(
+                                    text = tag,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (tag == "计时") FontWeight.Bold else FontWeight.Normal,
+                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else if (tag == "计时") Color.White else Color.Gray,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // 6. 全屏敲击模式

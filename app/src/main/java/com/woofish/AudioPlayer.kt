@@ -52,7 +52,7 @@ class AudioPlayer(private val context: Context) {
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
     }
 
-    fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 80) {
+    fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 120) {
         val list = when (mode) {
             AppMode.WOODEN_FISH -> woodenFishSounds
             AppMode.METRONOME -> metronomeSounds
@@ -83,7 +83,7 @@ class AudioPlayer(private val context: Context) {
     }
 
     fun playKnock(soundIndex: Int) {
-        playHit(AppMode.WOODEN_FISH, soundIndex, isManual = true, vibrationMs = 80)
+        playHit(AppMode.WOODEN_FISH, soundIndex, isManual = true, vibrationMs = 120)
     }
 
     fun isBgmPlaying(): Boolean = bgmPlayer?.isPlaying == true

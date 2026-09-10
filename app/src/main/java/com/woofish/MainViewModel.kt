@@ -31,7 +31,7 @@ data class WoodenFishUiState(
     val showAutoKnockDialog: Boolean = false,
     val beatIndex: Long = 0L, // 敲击/节拍累计索引，用于驱动受力回弹与节拍摆动动画
     val knockTrigger: Long = 0L, // 用于驱动受力回弹与节拍摆动动画
-    val vibrationMs: Int = 80 // 敲击震动强度 (0~200ms，默认80ms)
+    val vibrationMs: Int = 120 // 敲击震动强度 (0~500ms，默认120ms)
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,10 +39,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("wooden_fish_prefs", Context.MODE_PRIVATE)
 
     private var autoKnockJob: Job? = null
+    private var lastManualHitTime: Long = 0L
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
-    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 80)
+    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -85,6 +86,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onManualHit() {
+        val now = System.currentTimeMillis()
+        if (now - lastManualHitTime < 50L) {
+            return
+        }
+        lastManualHitTime = now
         onHit(isManual = true)
     }
 
@@ -127,7 +133,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateVibrationMs(ms: Int) {
-        val safeMs = ms.coerceIn(0, 200)
+        val safeMs = ms.coerceIn(0, 500)
         _uiState.value = _uiState.value.copy(vibrationMs = safeMs)
         prefs.edit().putInt("key_vibration_ms", safeMs).apply()
         // 调节滑块时轻触预览震感
