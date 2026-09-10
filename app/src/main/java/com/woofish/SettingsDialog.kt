@@ -1,5 +1,6 @@
 package com.woofish
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,8 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -126,40 +130,7 @@ fun SettingsDialog(
                     }
                 }
 
-                // 3. 敲击震动强度调节滑块 (0~80ms，默认40ms)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = "敲击震动强度", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                        Text(
-                            text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (state.vibrationMs == 0) Color.Gray else Color(0xFFFFD54F)
-                        )
-                    }
-                    Slider(
-                        value = state.vibrationMs.toFloat(),
-                        onValueChange = { onVibrationChange(it.toInt()) },
-                        valueRange = 0f..80f,
-                        steps = 79,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFFFFD54F),
-                            activeTrackColor = Color(0xFFFFD54F),
-                            inactiveTrackColor = Color(0xFF333333)
-                        )
-                    )
-                    Text(
-                        text = "默认 40ms，支持 0~80ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                // 4. 本地背景音乐选择与管理
+                // 3. 本地背景音乐选择与管理
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -206,7 +177,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 5. 背景音乐音量调节滑块
+                // 4. 背景音乐音量调节滑块
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -223,6 +194,39 @@ fun SettingsDialog(
                             activeTrackColor = Color.White,
                             inactiveTrackColor = Color(0xFF333333)
                         )
+                    )
+                }
+
+                // 5. 敲击震动强度调节滑块 (0~200ms，默认80ms，位于背景音乐设置下方)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "敲击震动强度", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(
+                            text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (state.vibrationMs == 0) Color.Gray else Color(0xFFFFD54F)
+                        )
+                    }
+                    Slider(
+                        value = state.vibrationMs.toFloat(),
+                        onValueChange = { onVibrationChange(it.toInt()) },
+                        valueRange = 0f..200f,
+                        steps = 199,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFFFFD54F),
+                            activeTrackColor = Color(0xFFFFD54F),
+                            inactiveTrackColor = Color(0xFF333333)
+                        )
+                    )
+                    Text(
+                        text = "默认 80ms，支持 0~200ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
+                        fontSize = 11.sp,
+                        color = Color.Gray
                     )
                 }
 
@@ -268,6 +272,55 @@ fun SettingsDialog(
                     ) {
                         Text(text = "清零", color = Color(0xFFFF5252), fontSize = 13.sp)
                     }
+                }
+
+                // 8. 随喜赞助 (微信收款码，完全自愿)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(color = Color(0xFF333333), thickness = 0.8.dp)
+
+                    Text(
+                        text = "💖 随喜赞助",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+
+                    Text(
+                        text = "若正念木鱼对您的静心有所助益，欢迎自愿随喜赞助支持软件持续维护与更新：",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.wepay),
+                            contentDescription = "微信赞助收款码",
+                            modifier = Modifier
+                                .size(160.dp)
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                    }
+
+                    Text(
+                        text = "微信扫一扫 · 随喜随缘 · 感恩有您 🙏",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFFFFD54F),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         },

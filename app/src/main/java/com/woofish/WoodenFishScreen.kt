@@ -123,9 +123,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
     // -------------------------------------------------------------
     // 节拍器专属中间粗线条左右乒乓反复摆动动效（摆幅±12.5°，确保完全位于白区内部不越界）
     // -------------------------------------------------------------
-    val metronomeTargetAngle = if (state.count == 0L) {
+    val metronomeTargetAngle = if (state.beatIndex == 0L) {
         0f
-    } else if (state.count % 2L == 1L) {
+    } else if (state.beatIndex % 2L == 1L) {
         12.5f
     } else {
         -12.5f

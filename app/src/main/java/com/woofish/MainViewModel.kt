@@ -29,8 +29,9 @@ data class WoodenFishUiState(
     val bpm: Int = 60,
     val autoKnockIntervalMs: Long = 1000L,
     val showAutoKnockDialog: Boolean = false,
+    val beatIndex: Long = 0L, // 敲击/节拍累计索引，用于驱动受力回弹与节拍摆动动画
     val knockTrigger: Long = 0L, // 用于驱动受力回弹与节拍摆动动画
-    val vibrationMs: Int = 40 // 敲击震动强度 (0~80ms，默认40ms)
+    val vibrationMs: Int = 80 // 敲击震动强度 (0~200ms，默认80ms)
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -41,7 +42,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
-    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 40)
+    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 80)
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -66,12 +67,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val sIndex = _uiState.value.soundIndex
         val vMs = _uiState.value.vibrationMs
         audioPlayer.playHit(mode, sIndex, isManual = isManual, vibrationMs = vMs)
-        val newCount = _uiState.value.count + 1
-        _uiState.value = _uiState.value.copy(
-            count = newCount,
-            knockTrigger = System.currentTimeMillis()
-        )
-        prefs.edit().putLong("key_count", newCount).apply()
+        val newBeatIndex = _uiState.value.beatIndex + 1
+        if (isManual) {
+            val newCount = _uiState.value.count + 1
+            _uiState.value = _uiState.value.copy(
+                count = newCount,
+                beatIndex = newBeatIndex,
+                knockTrigger = System.currentTimeMillis()
+            )
+            prefs.edit().putLong("key_count", newCount).apply()
+        } else {
+            _uiState.value = _uiState.value.copy(
+                beatIndex = newBeatIndex,
+                knockTrigger = System.currentTimeMillis()
+            )
+        }
     }
 
     fun onManualHit() {
@@ -117,7 +127,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateVibrationMs(ms: Int) {
-        val safeMs = ms.coerceIn(0, 80)
+        val safeMs = ms.coerceIn(0, 200)
         _uiState.value = _uiState.value.copy(vibrationMs = safeMs)
         prefs.edit().putInt("key_vibration_ms", safeMs).apply()
         // 调节滑块时轻触预览震感
@@ -218,7 +228,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetCount() {
-        _uiState.value = _uiState.value.copy(count = 0L)
+        _uiState.value = _uiState.value.copy(count = 0L, beatIndex = 0L)
         prefs.edit().putLong("key_count", 0L).apply()
     }
 
