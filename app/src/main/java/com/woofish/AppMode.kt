@@ -27,6 +27,13 @@ enum class AppMode(
         defaultSubtitle = "律动",
         soundNames = listOf("低音鼓", "手鼓", "非洲鼓"),
         iconResId = R.drawable.ic_drum
+    ),
+    POMODORO(
+        id = "pomodoro",
+        displayName = "番茄钟模式",
+        defaultSubtitle = "专注",
+        soundNames = listOf("禅钟提示", "清脆滴答"),
+        iconResId = R.drawable.ic_pomodoro
     );
 
     fun getTempoPresets(): List<Pair<String, Int>> = when (this) {
@@ -50,6 +57,13 @@ enum class AppMode(
             "律动 90" to 90,
             "动感 120" to 120,
             "狂热 150" to 150
+        )
+        POMODORO -> listOf(
+            "2分" to 2,
+            "5分" to 5,
+            "10分" to 10,
+            "15分" to 15,
+            "25分" to 25
         )
     }
 

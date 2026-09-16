@@ -13,16 +13,19 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.SolidColor
 import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -155,7 +158,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 .detectInstantTap(
                     enabled = state.isFullScreenTapEnabled,
                     onDown = {
-                        if (state.isAutoKnockEnabled) {
+                        if (state.currentMode == AppMode.POMODORO) {
+                            viewModel.onPomodoroTap()
+                        } else if (state.isAutoKnockEnabled) {
                             viewModel.toggleAutoKnock(false)
                         } else {
                             isTouchDown = true
@@ -248,7 +253,17 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             ) {
                 // 1. 自动节奏设置按钮 (包含清屏模式下的极简倒计时微显示)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.isTimerEnabled && state.isZenMode) {
+                    if (state.currentMode == AppMode.POMODORO && state.isZenMode) {
+                        val m = state.pomodoroRemainingSeconds / 60
+                        val s = state.pomodoroRemainingSeconds % 60
+                        Text(
+                            text = String.format("%02d:%02d", m, s),
+                            color = if (state.isPomodoroRunning) Color(0xFFFFD54F) else Color.Gray,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(end = 2.dp)
+                        )
+                    } else if (state.isTimerEnabled && state.isZenMode) {
                         val m = state.timerRemainingSeconds / 60
                         val s = state.timerRemainingSeconds % 60
                         Text(
@@ -319,8 +334,16 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val counterText = if (state.currentMode == AppMode.POMODORO) {
+                    val m = state.pomodoroRemainingSeconds / 60
+                    val s = state.pomodoroRemainingSeconds % 60
+                    String.format("%02d:%02d", m, s)
+                } else {
+                    "${state.count}"
+                }
+
                 Text(
-                    text = "${state.count}",
+                    text = counterText,
                     color = Color.White,
                     fontSize = 76.sp,
                     fontWeight = FontWeight.Bold,
@@ -330,25 +353,59 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         textAlign = TextAlign.Center
                     ),
                     letterSpacing = 2.sp,
-                    modifier = Modifier.pointerInput(state.count) {
+                    modifier = Modifier.pointerInput(state.count, state.currentMode) {
                         detectTapGestures(
                             onLongPress = {
-                                if (state.count > 0L) {
+                                if (state.currentMode != AppMode.POMODORO && state.count > 0L) {
                                     showResetConfirmDialog = true
                                 }
                             }
                         )
                     }
                 )
+
+                val subtitleText = if (state.currentMode == AppMode.POMODORO) {
+                    val stageCount = state.pomodoroStages.size
+                    val stageIdx = state.currentPomodoroStageIndex
+                    val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
+                    if (stageCount > 1) {
+                        "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount (${curStageMins}分)"
+                    } else {
+                        "${state.subtitle} (${curStageMins}分)"
+                    }
+                } else {
+                    state.subtitle
+                }
+
                 Text(
-                    text = state.subtitle,
+                    text = subtitleText,
                     color = Color(0xFF555555),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
 
-                // 首页倒计时浮动微光药丸胶囊
-                if (state.isTimerEnabled) {
+                // 状态胶囊指示器
+                if (state.currentMode == AppMode.POMODORO) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        onClick = { viewModel.togglePomodoro() },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (state.isPomodoroRunning) Color(0x33FFD54F) else Color(0xFF222222),
+                        border = BorderStroke(
+                            1.dp,
+                            if (state.isPomodoroRunning) Color(0x88FFD54F) else Color(0xFF444444)
+                        )
+                    ) {
+                        Text(
+                            text = if (state.isPomodoroRunning) "🍅 专注中 · 点击暂停" else "⏸️ 已暂停 · 点击继续",
+                            color = if (state.isPomodoroRunning) Color(0xFFFFD54F) else Color.LightGray,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                } else if (state.isTimerEnabled) {
+                    // 首页倒计时浮动微光药丸胶囊
                     val m = state.timerRemainingSeconds / 60
                     val s = state.timerRemainingSeconds % 60
                     val timeStr = String.format("%02d:%02d", m, s)
@@ -416,7 +473,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 .detectInstantTap(
                     enabled = !state.isFullScreenTapEnabled,
                     onDown = {
-                        if (state.isAutoKnockEnabled) {
+                        if (state.currentMode == AppMode.POMODORO) {
+                            viewModel.onPomodoroTap()
+                        } else if (state.isAutoKnockEnabled) {
                             viewModel.toggleAutoKnock(false)
                         } else {
                             isTouchDown = true
@@ -473,6 +532,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         // -------------------------------------------------------------
         // 4. 软件主界面 6 个自动敲击快捷直控按钮（加大按钮尺寸与触控面积）
         // -------------------------------------------------------------
+        var showPomodoroCustomDialog by remember { mutableStateOf(false) }
         var showQuickCustomBpmDialog by remember { mutableStateOf(false) }
         var quickCustomBpmText by remember { mutableStateOf(state.bpm.toString()) }
 
@@ -496,119 +556,249 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 上排 3 档速度 (30, 60, 90)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    topRowPresets.forEach { (label, value) ->
-                        val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
-                        Surface(
-                            onClick = {
-                                if (isPlayingThis) {
-                                    viewModel.toggleAutoKnock(false)
-                                } else {
-                                    viewModel.setBpm(value)
-                                    viewModel.toggleAutoKnock(true)
-                                }
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
-                            border = BorderStroke(
-                                width = 1.2.dp,
-                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Text(
-                                    text = if (isPlayingThis) "⏸ $label" else label,
-                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 13.5.sp,
-                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-                }
+                if (state.currentMode == AppMode.POMODORO) {
+                    // 番茄钟模式专属的 6 个按钮：2分, 5分, 10分 / 15分, 25分, 自定义
+                    val pomodoroTopPresets = listOf(2, 5, 10)
+                    val pomodoroBottomPresets = listOf(15, 25)
 
-                // 下排 3 档速度 (120, 150, 自定义)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    bottomRowPresets.forEach { (label, value) ->
-                        val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
-                        Surface(
-                            onClick = {
-                                if (isPlayingThis) {
-                                    viewModel.toggleAutoKnock(false)
-                                } else {
-                                    viewModel.setBpm(value)
-                                    viewModel.toggleAutoKnock(true)
-                                }
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
-                            border = BorderStroke(
-                                width = 1.2.dp,
-                                color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Text(
-                                    text = if (isPlayingThis) "⏸ $label" else label,
-                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 13.5.sp,
-                                    fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-
-                    // 第 6 档：自定义
-                    val isPlayingCustom = state.isAutoKnockEnabled && isCustomBpm
-                    Surface(
-                        onClick = {
-                            if (isPlayingCustom) {
-                                viewModel.toggleAutoKnock(false)
-                            } else {
-                                quickCustomBpmText = state.bpm.toString()
-                                showQuickCustomBpmDialog = true
-                            }
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
-                        border = BorderStroke(
-                            width = 1.2.dp,
-                            color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
+                    // 上排 3 档时间 (2分, 5分, 10分)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
+                        pomodoroTopPresets.forEach { minutes ->
+                            val label = "${minutes}分"
+                            val isSelected = state.pomodoroActivePreset == label
+                            val isRunning = isSelected && state.isPomodoroRunning
+                            Surface(
+                                onClick = {
+                                    if (isSelected) {
+                                        viewModel.togglePomodoro()
+                                    } else {
+                                        viewModel.startPomodoro(label, listOf(minutes))
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = 1.2.dp,
+                                    color = if (isSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Text(
+                                        text = if (isRunning) "⏸ $label" else label,
+                                        color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 下排 3 档时间 (15分, 25分, 自定义)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        pomodoroBottomPresets.forEach { minutes ->
+                            val label = "${minutes}分"
+                            val isSelected = state.pomodoroActivePreset == label
+                            val isRunning = isSelected && state.isPomodoroRunning
+                            Surface(
+                                onClick = {
+                                    if (isSelected) {
+                                        viewModel.togglePomodoro()
+                                    } else {
+                                        viewModel.startPomodoro(label, listOf(minutes))
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = 1.2.dp,
+                                    color = if (isSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Text(
+                                        text = if (isRunning) "⏸ $label" else label,
+                                        color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+                        // 第 6 档：自定义（支持多倒计时连接如 15+5）
+                        val isCustomSelected = state.pomodoroActivePreset == "自定义"
+                        val isCustomRunning = isCustomSelected && state.isPomodoroRunning
+                        Surface(
+                            onClick = {
+                                if (isCustomRunning) {
+                                    viewModel.pausePomodoro()
+                                } else {
+                                    showPomodoroCustomDialog = true
+                                }
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isCustomSelected) Color(0x33FFD54F) else Color.Transparent,
+                            border = BorderStroke(
+                                width = 1.2.dp,
+                                color = if (isCustomSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
                         ) {
-                            val customText = if (isCustomBpm) "自定义 ${state.bpm}" else "自定义 ✍️"
-                            Text(
-                                text = if (isPlayingCustom) "⏸ $customText" else customText,
-                                color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
-                                fontSize = 13.5.sp,
-                                fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium
-                            )
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                val customLabel = if (isCustomSelected && state.pomodoroCustomSequence.isNotBlank()) {
+                                    "自定义 ${state.pomodoroCustomSequence}"
+                                } else {
+                                    "自定义 ✍️"
+                                }
+                                Text(
+                                    text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
+                                    color = if (isCustomSelected) Color(0xFFFFD54F) else Color.White,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // 上排 3 档速度 (30, 60, 90)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        topRowPresets.forEach { (label, value) ->
+                            val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                            Surface(
+                                onClick = {
+                                    if (isPlayingThis) {
+                                        viewModel.toggleAutoKnock(false)
+                                    } else {
+                                        viewModel.setBpm(value)
+                                        viewModel.toggleAutoKnock(true)
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = 1.2.dp,
+                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Text(
+                                        text = if (isPlayingThis) "⏸ $label" else label,
+                                        color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 下排 3 档速度 (120, 150, 自定义)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        bottomRowPresets.forEach { (label, value) ->
+                            val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                            Surface(
+                                onClick = {
+                                    if (isPlayingThis) {
+                                        viewModel.toggleAutoKnock(false)
+                                    } else {
+                                        viewModel.setBpm(value)
+                                        viewModel.toggleAutoKnock(true)
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = 1.2.dp,
+                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Text(
+                                        text = if (isPlayingThis) "⏸ $label" else label,
+                                        color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+                        // 第 6 档：自定义
+                        val isPlayingCustom = state.isAutoKnockEnabled && isCustomBpm
+                        Surface(
+                            onClick = {
+                                if (isPlayingCustom) {
+                                    viewModel.toggleAutoKnock(false)
+                                } else {
+                                    quickCustomBpmText = state.bpm.toString()
+                                    showQuickCustomBpmDialog = true
+                                }
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
+                            border = BorderStroke(
+                                width = 1.2.dp,
+                                color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                val customText = if (isCustomBpm) "自定义 ${state.bpm}" else "自定义 ✍️"
+                                Text(
+                                    text = if (isPlayingCustom) "⏸ $customText" else customText,
+                                    color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
                         }
                     }
                 }
@@ -781,8 +971,157 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             )
         }
 
+        // 5. 自定义番茄钟倒计时弹窗（支持多阶段如 15+5）
+        if (showPomodoroCustomDialog) {
+            var tempSeq by remember(showPomodoroCustomDialog) {
+                mutableStateOf(if (state.pomodoroCustomSequence.isNotBlank()) state.pomodoroCustomSequence else "15+5")
+            }
+            val parsedStages = remember(tempSeq) {
+                viewModel.parsePomodoroSequence(tempSeq)
+            }
+            val totalMinutes = remember(parsedStages) {
+                parsedStages.sum()
+            }
+
+            AlertDialog(
+                onDismissRequest = { showPomodoroCustomDialog = false },
+                containerColor = Color(0xFF262626),
+                title = {
+                    Text(
+                        text = "自定义番茄钟倒计时",
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "支持单阶段或多阶段连续倒计时（用 + 连接，到时间自动衔接下一阶段）：",
+                            fontSize = 13.sp,
+                            color = Color.LightGray
+                        )
+
+                        // 输入框
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .border(1.dp, Color(0xFFFFD54F), RoundedCornerShape(8.dp))
+                                .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            BasicTextField(
+                                value = tempSeq,
+                                onValueChange = { tempSeq = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                ),
+                                cursorBrush = SolidColor(Color(0xFFFFD54F)),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        // 阶段解析预览
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF333333)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = "倒计时规划预览 (共 ${totalMinutes} 分钟)：",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFFFD54F)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                val previewStr = parsedStages.mapIndexed { idx, m ->
+                                    "阶段${idx + 1}: ${m}分"
+                                }.joinToString(" ➔ ")
+                                Text(
+                                    text = previewStr,
+                                    fontSize = 13.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        // 常用推荐模版快捷选择
+                        Text(
+                            text = "常用专注模版快捷选择：",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        val quickPresets = listOf(
+                            "15+5", "25+5", "45+15", "50+10",
+                            "25+5+25+15", "30", "45", "60"
+                        )
+                        val presetRows = quickPresets.chunked(4)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            presetRows.forEach { rowItems ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    rowItems.forEach { preset ->
+                                        Surface(
+                                            onClick = { tempSeq = preset },
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = if (tempSeq == preset) Color(0xFF3A301D) else Color(0xFF1E1E1E),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (tempSeq == preset) Color(0xFFFFD54F) else Color(0xFF444444)
+                                            ),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.padding(vertical = 8.dp)
+                                            ) {
+                                                Text(
+                                                    text = preset,
+                                                    fontSize = 12.sp,
+                                                    color = if (tempSeq == preset) Color(0xFFFFD54F) else Color.LightGray,
+                                                    fontWeight = if (tempSeq == preset) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.setPomodoroCustomSequence(tempSeq)
+                            showPomodoroCustomDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                    ) {
+                        Text(text = "开始倒计时", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPomodoroCustomDialog = false }) {
+                        Text(text = "取消", color = Color.Gray)
+                    }
+                }
+            )
+        }
+
         // -------------------------------------------------------------
-        // 5. 自动节奏/BPM调节弹窗
+        // 6. 自动节奏/BPM调节弹窗
         // -------------------------------------------------------------
         if (state.showAutoKnockDialog) {
             AutoKnockDialog(
@@ -790,20 +1129,18 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 onDismiss = { viewModel.toggleAutoKnockDialog(false) },
                 onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
                 onBpmChange = { viewModel.setBpm(it) },
-                onToggleTimer = { viewModel.toggleTimer(it) },
-                onSetTimerDuration = { viewModel.setTimerDuration(it) }
+                onSubtitleChange = { viewModel.updateSubtitle(it) }
             )
         }
 
         // -------------------------------------------------------------
-        // 6. 软件设置弹窗
+        // 7. 软件设置弹窗
         // -------------------------------------------------------------
         if (state.showSettings) {
             SettingsDialog(
                 state = state,
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
                 onModeChange = { viewModel.setAppMode(it) },
-                onSubtitleChange = { viewModel.updateSubtitle(it) },
                 onVolumeChange = { viewModel.updateBgmVolume(it) },
                 onVibrationChange = { viewModel.updateVibrationMs(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },

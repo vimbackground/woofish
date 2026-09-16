@@ -35,7 +35,15 @@ data class WoodenFishUiState(
     val isTimerEnabled: Boolean = false, // 是否开启倒计时功能
     val timerDurationMinutes: Int = 15, // 倒计时设定时长 (分钟)
     val timerRemainingSeconds: Long = 15 * 60L, // 倒计时当前剩余秒数
-    val timerFinishedTrigger: Long = 0L // 倒计时结束触发标记
+    val timerFinishedTrigger: Long = 0L, // 倒计时结束触发标记
+    // 番茄钟专注模式专属状态
+    val isPomodoroRunning: Boolean = false,
+    val pomodoroStages: List<Int> = listOf(25),
+    val currentPomodoroStageIndex: Int = 0,
+    val pomodoroRemainingSeconds: Long = 25 * 60L,
+    val pomodoroActivePreset: String = "25分",
+    val pomodoroCustomSequence: String = "15+5",
+    val pomodoroStageFinishedTrigger: Long = 0L
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -44,6 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var autoKnockJob: Job? = null
     private var timerJob: Job? = null
+    private var pomodoroJob: Job? = null
     private var lastManualHitTime: Long = 0L
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
@@ -51,6 +60,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
     private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
     private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
+    private val initialPomodoroCustomSeq: String = prefs.getString("key_pomodoro_custom_sequence", "15+5") ?: "15+5"
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -68,7 +78,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             vibrationMs = initialVibrationMs,
             isTimerEnabled = initialTimerEnabled,
             timerDurationMinutes = initialTimerMinutes,
-            timerRemainingSeconds = initialTimerMinutes * 60L
+            timerRemainingSeconds = initialTimerMinutes * 60L,
+            pomodoroCustomSequence = initialPomodoroCustomSeq
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -114,6 +125,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", 0)
         // 模式切换时，计数显示文案自动调整
         val newSubtitle = mode.defaultSubtitle
+
+        if (mode != AppMode.POMODORO) {
+            stopPomodoro()
+        } else {
+            toggleAutoKnock(false)
+        }
 
         _uiState.value = _uiState.value.copy(
             currentMode = mode,
@@ -328,10 +345,124 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putLong("key_count", 0L).apply()
     }
 
+    // -------------------------------------------------------------
+    // 番茄钟多阶段专注倒计时控制体系
+    // -------------------------------------------------------------
+    fun parsePomodoroSequence(input: String): List<Int> {
+        val items = input.split('+', '、', ',', '，', ' ')
+            .mapNotNull { it.trim().toIntOrNull() }
+            .filter { it in 1..180 }
+        return if (items.isNotEmpty()) items else listOf(25)
+    }
+
+    fun startPomodoro(presetLabel: String, stages: List<Int>) {
+        pomodoroJob?.cancel()
+        val validStages = if (stages.isNotEmpty()) stages else listOf(25)
+        _uiState.value = _uiState.value.copy(
+            isPomodoroRunning = true,
+            pomodoroActivePreset = presetLabel,
+            pomodoroStages = validStages,
+            currentPomodoroStageIndex = 0,
+            pomodoroRemainingSeconds = validStages[0] * 60L
+        )
+        runPomodoroTicker()
+    }
+
+    private fun runPomodoroTicker() {
+        pomodoroJob?.cancel()
+        pomodoroJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000L)
+                val curRemaining = _uiState.value.pomodoroRemainingSeconds - 1L
+                if (curRemaining <= 0L) {
+                    val nextStageIdx = _uiState.value.currentPomodoroStageIndex + 1
+                    val allStages = _uiState.value.pomodoroStages
+                    if (nextStageIdx < allStages.size) {
+                        // 阶段过渡：触发提示音并进入下一阶段（如 15分 -> 5分）
+                        audioPlayer.playTimerFinishedFeedback()
+                        _uiState.value = _uiState.value.copy(
+                            currentPomodoroStageIndex = nextStageIdx,
+                            pomodoroRemainingSeconds = allStages[nextStageIdx] * 60L,
+                            pomodoroStageFinishedTrigger = System.currentTimeMillis()
+                        )
+                    } else {
+                        // 全部阶段圆满结束
+                        audioPlayer.playTimerFinishedFeedback()
+                        _uiState.value = _uiState.value.copy(
+                            isPomodoroRunning = false,
+                            currentPomodoroStageIndex = 0,
+                            pomodoroRemainingSeconds = allStages[0] * 60L,
+                            pomodoroStageFinishedTrigger = System.currentTimeMillis()
+                        )
+                        break
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(pomodoroRemainingSeconds = curRemaining)
+                }
+            }
+        }
+    }
+
+    fun resumePomodoro() {
+        if (_uiState.value.isPomodoroRunning) return
+        _uiState.value = _uiState.value.copy(isPomodoroRunning = true)
+        runPomodoroTicker()
+    }
+
+    fun pausePomodoro() {
+        pomodoroJob?.cancel()
+        _uiState.value = _uiState.value.copy(isPomodoroRunning = false)
+    }
+
+    fun stopPomodoro() {
+        pausePomodoro()
+    }
+
+    fun togglePomodoro(presetLabel: String? = null, stages: List<Int>? = null) {
+        val currentPreset = _uiState.value.pomodoroActivePreset
+        if (presetLabel == null || presetLabel == currentPreset) {
+            if (_uiState.value.isPomodoroRunning) {
+                pausePomodoro()
+            } else {
+                if (_uiState.value.pomodoroRemainingSeconds > 0L) {
+                    resumePomodoro()
+                } else {
+                    startPomodoro(currentPreset, _uiState.value.pomodoroStages)
+                }
+            }
+        } else {
+            startPomodoro(presetLabel, stages ?: listOf(25))
+        }
+    }
+
+    fun setPomodoroCustomSequence(seqStr: String) {
+        val trimmed = seqStr.trim()
+        val stages = parsePomodoroSequence(trimmed)
+        prefs.edit().putString("key_pomodoro_custom_sequence", trimmed).apply()
+        _uiState.value = _uiState.value.copy(
+            pomodoroCustomSequence = trimmed
+        )
+        startPomodoro("自定义", stages)
+    }
+
+    fun onPomodoroTap() {
+        if (_uiState.value.isPomodoroRunning) {
+            pausePomodoro()
+        } else {
+            if (_uiState.value.pomodoroRemainingSeconds > 0L) {
+                resumePomodoro()
+            } else {
+                startPomodoro(_uiState.value.pomodoroActivePreset, _uiState.value.pomodoroStages)
+            }
+        }
+        audioPlayer.playHit(_uiState.value.currentMode, _uiState.value.soundIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
+    }
+
     override fun onCleared() {
         super.onCleared()
         autoKnockJob?.cancel()
         timerJob?.cancel()
+        pomodoroJob?.cancel()
         audioPlayer.release()
     }
 }

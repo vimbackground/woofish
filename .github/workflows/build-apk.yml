@@ -42,8 +42,8 @@ jobs:
             TAG_VER="${{ github.ref_name }}"
             PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v0.13.0"
-            PURE_VER="0.13.0"
+            TAG_VER="v1.0.0"
+            PURE_VER="1.0.0"
           fi
           # 生成名称为 woofish-x.y.z.apk 的安装包
           APK_NAME="woofish-${PURE_VER}.apk"

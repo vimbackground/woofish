@@ -14,6 +14,7 @@ class AudioPlayer(private val context: Context) {
     private val woodenFishSounds = mutableListOf<Int>()
     private val metronomeSounds = mutableListOf<Int>()
     private val drumSounds = mutableListOf<Int>()
+    private val pomodoroSounds = mutableListOf<Int>()
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
 
@@ -50,6 +51,10 @@ class AudioPlayer(private val context: Context) {
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_kick, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_hand, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
+
+        // 4. 番茄钟音效 (2 种：禅钟提示、清脆滴答)
+        pomodoroSounds.add(soundPool.load(context, R.raw.sound_fish_3, 1))
+        pomodoroSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))
     }
 
     fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 120) {
@@ -57,6 +62,7 @@ class AudioPlayer(private val context: Context) {
             AppMode.WOODEN_FISH -> woodenFishSounds
             AppMode.METRONOME -> metronomeSounds
             AppMode.DRUM -> drumSounds
+            AppMode.POMODORO -> pomodoroSounds
         }
         val safeIndex = soundIndex.coerceIn(0, (list.size - 1).coerceAtLeast(0))
         if (safeIndex in list.indices) {

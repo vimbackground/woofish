@@ -26,7 +26,6 @@ fun SettingsDialog(
     state: WoodenFishUiState,
     onDismiss: () -> Unit,
     onModeChange: (AppMode) -> Unit,
-    onSubtitleChange: (String) -> Unit,
     onVolumeChange: (Float) -> Unit,
     onVibrationChange: (Int) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
@@ -34,12 +33,6 @@ fun SettingsDialog(
     onPickBgm: () -> Unit,
     onClearBgm: () -> Unit
 ) {
-    var subtitleInput by remember { mutableStateOf(state.subtitle) }
-
-    LaunchedEffect(state.subtitle) {
-        subtitleInput = state.subtitle
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF1E1E1E),
@@ -57,32 +50,35 @@ fun SettingsDialog(
                     .padding(top = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓)
+                // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓 / 番茄钟)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        AppMode.entries.forEach { mode ->
-                            val isSelected = state.currentMode == mode
-                            Surface(
-                                onClick = { onModeChange(mode) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.padding(vertical = 10.dp)
+                    val modeChunks = AppMode.entries.chunked(2)
+                    modeChunks.forEach { rowModes ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowModes.forEach { mode ->
+                                val isSelected = state.currentMode == mode
+                                Surface(
+                                    onClick = { onModeChange(mode) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(
-                                        text = mode.displayName.replace("模式", ""),
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                                    )
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(vertical = 10.dp)
+                                    ) {
+                                        Text(
+                                            text = mode.displayName.replace("模式", ""),
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -189,59 +185,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 5. 计时显示文案自定义 (置于背景音乐与震动强度之后，输入框精简紧凑)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = "计时显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(42.dp)
-                            .border(1.dp, Color(0xFF444444), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (subtitleInput.isEmpty()) {
-                            Text("例如：正念、计时、功德、节拍", fontSize = 13.sp, color = Color(0xFF666666))
-                        }
-                        BasicTextField(
-                            value = subtitleInput,
-                            onValueChange = {
-                                subtitleInput = it
-                                onSubtitleChange(it)
-                            },
-                            singleLine = true,
-                            textStyle = TextStyle(color = Color.White, fontSize = 13.5.sp),
-                            cursorBrush = SolidColor(Color(0xFFFFD54F)),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    // 常用快捷选项
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf("正念", "计时", "功德", "节拍", "律动", "计数").forEach { tag ->
-                            Surface(
-                                onClick = {
-                                    subtitleInput = tag
-                                    onSubtitleChange(tag)
-                                },
-                                shape = RoundedCornerShape(6.dp),
-                                color = if (subtitleInput == tag) Color(0xFF3A301D) else Color(0xFF262626)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (tag == "计时") FontWeight.Bold else FontWeight.Normal,
-                                    color = if (subtitleInput == tag) Color(0xFFFFD54F) else if (tag == "计时") Color.White else Color.Gray,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 6. 全屏敲击模式
+                // 5. 全屏敲击模式
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -263,7 +207,7 @@ fun SettingsDialog(
                     )
                 }
 
-                // 7. 统计清零
+                // 6. 统计清零
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -285,7 +229,7 @@ fun SettingsDialog(
                     }
                 }
 
-                // 8. 随喜赞助 (微信收款码，完全自愿)
+                // 7. 随喜赞助 (微信收款码，完全自愿)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
