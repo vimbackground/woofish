@@ -186,6 +186,7 @@ jobs:
           mkdir -p release_dist
           find release_artifacts -type f \( -name "*.apk" -o -name "*.zip" \) -exec cp {} release_dist/ \;
           ls -lh release_dist/
+          python3 scripts/extract_release_notes.py RELEASE_NOTES.md current_release_notes.md "${PURE_VER}"
           echo "tag_ver=${TAG_VER}" >> $GITHUB_OUTPUT
           echo "pure_ver=${PURE_VER}" >> $GITHUB_OUTPUT
 
@@ -195,7 +196,7 @@ jobs:
           name: "woofish-${{ steps.prep_files.outputs.pure_ver }}"
           tag_name: ${{ steps.prep_files.outputs.tag_ver }}
           files: release_dist/*
-          body_path: RELEASE_NOTES.md
+          body_path: current_release_notes.md
           generate_release_notes: false
           draft: false
           prerelease: false
