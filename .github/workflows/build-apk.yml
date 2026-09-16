@@ -31,6 +31,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+          cache-disabled: true
 
       - name: Build Android Release APK
         run: |
@@ -101,6 +102,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+          cache-disabled: true
 
       - name: Build Windows Distributable
         run: |
