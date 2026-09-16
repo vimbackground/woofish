@@ -96,4 +96,4 @@ Windows 桌面版为办公摸鱼与键盘操作提供了贴心快捷键支持：
 
 ## 📌 致谢
 
-本项目重构自开源项目 [WoodenFish (by Ares-Chang)](https://github.com/ares-chang/wooden-fish)，在此对原作者表示衷心感谢！
+本项目最初灵感来自开源项目 [WoodenFish (by Ares-Chang)](https://github.com/ares-chang/wooden-fish)，在此对原作者表示衷心感谢！
