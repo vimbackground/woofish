@@ -34,7 +34,12 @@ jobs:
 
       - name: Build Android Release APK
         run: |
-          gradle :app:assembleRelease --stacktrace > android_build.log 2>&1 || (cat android_build.log | tail -n 80; exit 1)
+          if ! gradle :app:assembleRelease --stacktrace > android_build.log 2>&1; then
+            cat android_build.log
+            ERR_MSG=$(tail -n 30 android_build.log | tr -d '\r' | tr '\n' ' ' | cut -c 1-500)
+            echo "::error title=AndroidBuildError::$ERR_MSG"
+            exit 1
+          fi
 
       - name: Upload Android Build Log
         if: always()
@@ -102,6 +107,10 @@ jobs:
           gradle :desktop:packageReleaseAppImage --stacktrace *>&1 | Tee-Object -FilePath windows_build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content windows_build.log | Select-Object -Last 80
+            $lines = Get-Content windows_build.log | Select-Object -Last 30
+            $errMsg = ($lines -join ' ')
+            if ($errMsg.Length -gt 500) { $errMsg = $errMsg.Substring(0, 500) }
+            Write-Host "::error title=WindowsBuildError::$errMsg"
             exit $LASTEXITCODE
           }
 
