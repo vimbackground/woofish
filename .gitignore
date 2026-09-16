@@ -4,12 +4,21 @@
 /.idea/
 .DS_Store
 /build
+**/build/
 /app/build
+/desktop/build
+/shared/build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
 
-# 本地专属 AI Agent 开发规范与工具包（不上传 GitHub）
+# 本地发布产物目录（由构建脚本生成）
+_Dist/
+
+# 本地专属 AI Agent 与工作目录（不上传 GitHub）
 Agent.md
+agent.md
+_Agent/
+_WIP/
 _Dev/

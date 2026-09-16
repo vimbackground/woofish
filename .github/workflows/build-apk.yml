@@ -1,4 +1,4 @@
-name: Build & Release Android APK
+name: Build & Release woofish (Android & Windows)
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build & Publish APK
+  build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -27,13 +27,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle 8.7
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
 
-      - name: Build APK
-        run: gradle assembleDebug --stacktrace
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Android Release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
 
       - name: Prepare APK Package
         id: prepare_apk
@@ -42,14 +43,15 @@ jobs:
             TAG_VER="${{ github.ref_name }}"
             PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v1.0.1"
-            PURE_VER="1.0.1"
+            TAG_VER="v1.1.0"
+            PURE_VER="1.1.0"
           fi
-          # 生成名称为 woofish-x.y.z.apk 的安装包
           APK_NAME="woofish-${PURE_VER}.apk"
-          FOUND_APK=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          FOUND_APK=$(find _Dist/android/ modules/android/build/outputs/apk/release/ build/ -name "*.apk" 2>/dev/null | head -n 1)
           if [ -n "$FOUND_APK" ]; then
             cp "$FOUND_APK" "${APK_NAME}"
+            echo "Found APK: $FOUND_APK -> ${APK_NAME}"
+            ls -lh "${APK_NAME}"
           else
             echo "No APK found" && exit 1
           fi
@@ -64,12 +66,90 @@ jobs:
           path: ${{ steps.prepare_apk.outputs.apk_name }}
           if-no-files-found: error
 
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Windows Distributable
+        run: ./gradlew.bat :desktop:packageReleaseAppImage --stacktrace
+
+      - name: Package Windows Zip
+        id: prepare_zip
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like "refs/tags/*") {
+            $tagVer = $env:GITHUB_REF_NAME
+            $pureVer = $tagVer.TrimStart('v')
+          } else {
+            $tagVer = "v1.1.0"
+            $pureVer = "1.1.0"
+          }
+          $zipName = "woofish-$pureVer-windows-x64.zip"
+          $distPath = if (Test-Path "_Dist/windows/woofish") {
+            "_Dist/windows/woofish/*"
+          } elseif (Test-Path "build/windows/compose/binaries/main-release/app/woofish") {
+            "build/windows/compose/binaries/main-release/app/woofish/*"
+          } else {
+            "build/windows/compose/binaries/main/app/woofish/*"
+          }
+          Compress-Archive -Path $distPath -DestinationPath $zipName -Force
+          Get-Item $zipName | Format-List Length, Name
+          echo "zip_name=$zipName" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prepare_zip.outputs.zip_name }}
+          path: ${{ steps.prepare_zip.outputs.zip_name }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_artifacts
+
+      - name: Prepare Release Files
+        id: prep_files
+        run: |
+          TAG_VER="${{ github.ref_name }}"
+          PURE_VER="${TAG_VER#v}"
+          mkdir -p release_dist
+          find release_artifacts -type f \( -name "*.apk" -o -name "*.zip" \) -exec cp {} release_dist/ \;
+          ls -lh release_dist/
+          echo "tag_ver=${TAG_VER}" >> $GITHUB_OUTPUT
+          echo "pure_ver=${PURE_VER}" >> $GITHUB_OUTPUT
+
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "woofish-${{ steps.prepare_apk.outputs.pure_ver }}"
-          tag_name: ${{ steps.prepare_apk.outputs.tag_ver }}
-          files: ${{ steps.prepare_apk.outputs.apk_name }}
+          name: "woofish-${{ steps.prep_files.outputs.pure_ver }}"
+          tag_name: ${{ steps.prep_files.outputs.tag_ver }}
+          files: release_dist/*
           body_path: RELEASE_NOTES.md
           generate_release_notes: false
           draft: false

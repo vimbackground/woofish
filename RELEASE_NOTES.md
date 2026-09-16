@@ -1,3 +1,24 @@
+### ⏰ 正念 (woofish) v1.1.0 版本更新
+
+#### 🏗️ 全新 Compose Multiplatform 跨平台多模块重构
+- **核心共享架构**：将项目全面重构为多模块现代化架构（`:shared`、`:app`、`:desktop`），全平台 100% 共享 Compose UI 界面渲染、状态流转与乐器核心业务逻辑；
+- **全平台一致体验**：Windows 桌面端与 Android 移动端具备完全一致的视觉动效、音效预设、计时逻辑与交互细节。
+
+#### 📦 Android 安装包体积断崖式精简（8.8MB ➔ 1.2MB）
+- **R8 深度代码裁剪**：启用 Google 原生 R8 编译器进行整包静态调用分析（Tree-shaking），精准剔除 Compose 与 AndroidX 中未使用的冗余类与方法，DEX 代码体积暴降 90%；
+- **资源混淆与压缩**：开启资源精简（Resource Shrinking）与极短路径混淆，剥离开发期调试依赖，APK 仅约 1.2 MB，秒速下载、轻巧纯粹。
+
+#### 📱 移动端原生硬件特性平滑适配
+- **高精度音频与桌面级震感**：实现 Android 原生 `AudioPlayer`，采用底层低延迟 `SoundPool`（触碰即响、零延迟发声）与 0~500ms 满幅物理驱动震颤；
+- **环境音乐实时测速适配**：完成 `AndroidAudioRecorder` 麦克风音频流适配，完美支持 Android 平台的环境音乐高精度实时测速；
+- **安全本地音频选择**：基于 Android SAF（存储访问框架）安全读取本地背景音乐文件，保护用户隐私。
+
+#### 🚀 本地自动化构建与 GitHub Actions 流线深度升级
+- **本地一键快速编译**：新增双击一键单独打包 APK 批处理脚本 `build_apk.bat` 与全量构建脚本 `build_local.bat` / `build_local.ps1`，自动检测并补齐 JDK 17 与 Android SDK 构建链；
+- **GitHub Actions 生产流线优化**：CI/CD 自动化构建全面升级为构建官方签名与 R8 极限优化的 Release 生产版本，GitHub Release 自动发布 1.2MB 极简安装包与 Windows 免安装绿色版。
+
+---
+
 ### ⏰ 正念 (woofish) v1.0.1 版本更新
 
 #### 🕒 极简纯白钟表图标与视觉重塑

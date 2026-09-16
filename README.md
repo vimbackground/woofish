@@ -52,18 +52,55 @@
 - 📱 **默认全屏敲击模式**：启动时默认开启全屏点击，手指触碰屏幕任意空白区域均可正常触发击打。
 - 👁️ **沉浸清屏模式**：点击右上角【清屏】后，仅清除屏幕中心的计数与文字及下部直控按钮，顶栏按钮完整保留常驻。
 - ✨ **固态实木物理打击动效**：去除果冻史莱姆般的横向拉伸变形，呈现真实硬木微下沉（4dp）与无迟滞坚硬回弹。
+- 💻 **全新 Windows 原生桌面版**：
+  - 基于 **Compose Multiplatform (Desktop)** 打造，与 Android 端 100% 共享 UI 与核心逻辑，视觉与动效像素级还原；
+  - **独立绿色免安装**：通过 `jlink` 内置极简 JRE 运行时，解压后双击 `woofish.exe` 即可运行，电脑无需安装 Java；
+  - **PC 专属摸鱼快捷键**：
+    - **`空格键 (Space)`**：轻敲木鱼 / 击打鼓面 / 启动或暂停番茄钟；
+    - **`回车键 (Enter)` / `Backspace`**：功德击打计数一键清零；
+    - **`数字键 1 ~ 5`**：快速切换 30 / 60 / 90 / 120 / 150 节奏档位；
+    - **`Z 键`**：一键切换沉浸清屏模式；
+    - **`M 键`**：本地背景音乐快速开关。
 
 ---
 
-## 🛠️ 技术栈
+## 🛠️ 技术栈与跨平台架构
 
 - **应用名称**：`正念` (woofish)
-- **当前版本**：`v1.0.0`
-- **语言**：Kotlin 2.0
-- **UI 框架**：Jetpack Compose (Material 3)
-- **音频引擎**：`SoundPool`（低延迟打击音效池） + `MediaPlayer`（本地 Uri BGM 循环播放）
-- **触觉反馈**：`Vibrator` / `VibrationEffect`（0~500ms 满幅物理驱动）
-- **CI/CD 自动化**：GitHub Actions 自动构建与发布 Release，生成 `woofish-1.0.0.apk`
+- **多端支持**：Android + Windows (PC 桌面端)
+- **开发语言**：Kotlin 2.0
+- **UI 框架**：Compose Multiplatform (Material 3)
+- **音频引擎**：
+  - **Android 端**：`SoundPool`（微秒级低延迟音效池） + `MediaPlayer`（BGM 循环播放）
+  - **Windows 端**：Java Sound API `Clip`（预载入内存多轨并发击打） + `mp3spi`（支持 MP3/WAV/FLAC 本地音乐）
+- **触觉反馈**：`Vibrator` / `VibrationEffect`（Android 0~500ms 满幅物理驱动）
+- **CI/CD 自动化**：GitHub Actions 自动双端构建并发布 Release，同步生成 `woofish-<version>.apk` 与 `woofish-<version>-windows-x64.zip`
+
+---
+
+## 📦 本地编译与构建指南
+
+上传到 GitHub 前，建议在本地完成测试与编译：
+
+### 1. 本地单独编译 Android APK
+直接在根目录双击运行或命令行执行：
+```bash
+./build_apk.bat
+# 或使用 PowerShell:
+./build_local.ps1 -Target apk
+```
+构建成功后，输出的 APK 文件将自动归档至：
+`_Dist/android/woofish-<version>.apk`
+
+### 2. 双端全量构建 (Windows 桌面便携版 + Android APK)
+```bash
+./build_local.bat
+# 或使用 PowerShell:
+./build_local.ps1
+```
+构建产物清单：
+- **Windows 便携版**：`_Dist/windows/woofish/woofish.exe`
+- **Android 安装包**：`_Dist/android/woofish-<version>.apk`
 
 ---
 

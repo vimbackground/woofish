@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- 极简现代钟表 (小巧白色表盘，黑色刻度与指针) -->
+    <group
+        android:translateX="0"
+        android:translateY="3.5">
+        
+        <!-- 顶部表钮 / 表冠 (纯白色) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 52,32 H 56 V 36 H 52 Z"/>
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:pathData="M 50,32 C 50,29 58,29 58,32"/>
+
+        <!-- 纯白实心小表盘 (半径 18dp，小巧灵动居中) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 54,36 A 18,18 0 1,1 53.99,36 Z"/>
+
+        <!-- 四方黑色刻度线 (12点、3点、6点、9点) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#111111"
+            android:strokeWidth="1.8"
+            android:strokeLineCap="round"
+            android:pathData="M 54,39 L 54,42.5
+                             M 54,65.5 L 54,69
+                             M 39,54 L 42.5,54
+                             M 65.5,54 L 69,54"/>
+
+        <!-- 黑色时针 (指向 10 点，短实笃定) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#111111"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:pathData="M 54,54 L 46.5,46.5"/>
+
+        <!-- 黑色分针 (指向 2 点，修长舒展，构成经典 10:10 正念微笑姿态) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#111111"
+            android:strokeWidth="2.0"
+            android:strokeLineCap="round"
+            android:pathData="M 54,54 L 63.5,44.5"/>
+
+        <!-- 黑色中心轴点 -->
+        <path
+            android:fillColor="#111111"
+            android:pathData="M 54,52.2 A 1.8,1.8 0 1,1 53.99,52.2 Z"/>
+    </group>
+</vector>

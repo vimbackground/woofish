@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- 纯白浑然一体的鼓身实心外部轮廓（去除所有内部黑线与黑圈，保持极简禅意纯白） -->
+    <path
+        android:fillColor="#EEEEEE"
+        android:pathData="M 50,18
+                          C 76,18 85,25 85,34
+                          L 81,66
+                          C 79,77 68,84 50,84
+                          C 32,84 21,77 19,66
+                          L 15,34
+                          C 15,25 24,18 50,18 Z" />
+</vector>
