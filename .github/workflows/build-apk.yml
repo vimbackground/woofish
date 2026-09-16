@@ -108,10 +108,19 @@ jobs:
         run: |
           gradle :desktop:packageReleaseAppImage --stacktrace *>&1 | Tee-Object -FilePath windows_build.log
           if ($LASTEXITCODE -ne 0) {
-            Get-Content windows_build.log | Select-Object -Last 80
-            $lines = Get-Content windows_build.log | Select-Object -Last 30
-            $errMsg = ($lines -join ' ')
-            if ($errMsg.Length -gt 500) { $errMsg = $errMsg.Substring(0, 500) }
+            $raw = Get-Content windows_build.log -Raw
+            $errMsg = ""
+            if ($raw -match '(\* What went wrong:[\s\S]+?)(?=\* Try:|\Z)') {
+              $errMsg = $matches[1].Trim()
+            }
+            if ($raw -match '(Caused by:[\s\S]+?)(?=\tat |\Z)') {
+              $errMsg += " | " + $matches[1].Trim()
+            }
+            if (-not $errMsg) {
+              $errMsg = (Get-Content windows_build.log | Select-Object -Last 20) -join ' '
+            }
+            $errMsg = ($errMsg -replace "[\r\n]+", " ")
+            if ($errMsg.Length -gt 800) { $errMsg = $errMsg.Substring(0, 800) }
             Write-Host "::error title=WindowsBuildError::$errMsg"
             exit $LASTEXITCODE
           }
