@@ -106,6 +106,7 @@ jobs:
 
       - name: Build Windows Distributable
         run: |
+          New-Item -ItemType Directory -Force -Path "build\wix311" | Out-Null
           gradle :desktop:packageReleaseAppImage --stacktrace *>&1 | Tee-Object -FilePath windows_build.log
           if ($LASTEXITCODE -ne 0) {
             $raw = Get-Content windows_build.log -Raw
