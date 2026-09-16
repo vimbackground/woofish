@@ -15,6 +15,7 @@ class AudioPlayer(private val context: Context) {
     private val metronomeSounds = mutableListOf<Int>()
     private val drumSounds = mutableListOf<Int>()
     private val pomodoroSounds = mutableListOf<Int>()
+    private var pomodoroTickSound: Int = 0
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
 
@@ -52,9 +53,15 @@ class AudioPlayer(private val context: Context) {
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_hand, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
 
-        // 4. 番茄钟音效 (2 种：禅钟提示、清脆滴答)
-        pomodoroSounds.add(soundPool.load(context, R.raw.sound_fish_3, 1))
-        pomodoroSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))
+        // 4. 番茄钟专属背景轻柔秒针走动滴答音
+        pomodoroTickSound = soundPool.load(context, R.raw.sound_pomodoro_tick, 1)
+        pomodoroSounds.add(pomodoroTickSound)
+    }
+
+    fun playPomodoroTick() {
+        if (pomodoroTickSound != 0) {
+            soundPool.play(pomodoroTickSound, 0.35f, 0.35f, 1, 0, 1f)
+        }
     }
 
     fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 120) {

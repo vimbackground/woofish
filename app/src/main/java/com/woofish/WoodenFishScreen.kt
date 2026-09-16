@@ -227,22 +227,41 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                // 3. 当前模式下的专属音效切换胶囊按钮
-                val currentSoundName = state.currentMode.soundNames.getOrNull(state.soundIndex)
-                    ?: state.currentMode.soundNames.firstOrNull() ?: "音效"
-                Surface(
-                    onClick = { viewModel.toggleSoundEffect() },
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF222222),
-                    tonalElevation = 2.dp
-                ) {
-                    Text(
-                        text = "🔊 $currentSoundName",
-                        color = Color(0xFFCCCCCC),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
+                // 3. 当前模式下的专属音效切换胶囊按钮 (番茄钟模式直接开关滴答音)
+                if (state.currentMode == AppMode.POMODORO) {
+                    val isSoundOn = state.isPomodoroSoundEnabled
+                    Surface(
+                        onClick = { viewModel.togglePomodoroSound() },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSoundOn) Color(0xFF332B1A) else Color(0xFF222222),
+                        border = if (isSoundOn) BorderStroke(1.dp, Color(0x88FFD54F)) else null,
+                        tonalElevation = 2.dp
+                    ) {
+                        Text(
+                            text = if (isSoundOn) "🔊 滴答音" else "🔇 静音",
+                            color = if (isSoundOn) Color(0xFFFFD54F) else Color(0xFF888888),
+                            fontSize = 13.sp,
+                            fontWeight = if (isSoundOn) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                } else {
+                    val currentSoundName = state.currentMode.soundNames.getOrNull(state.soundIndex)
+                        ?: state.currentMode.soundNames.firstOrNull() ?: "音效"
+                    Surface(
+                        onClick = { viewModel.toggleSoundEffect() },
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF222222),
+                        tonalElevation = 2.dp
+                    ) {
+                        Text(
+                            text = "🔊 $currentSoundName",
+                            color = Color(0xFFCCCCCC),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
                 }
             }
 
@@ -397,7 +416,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         )
                     ) {
                         Text(
-                            text = if (state.isPomodoroRunning) "🍅 专注中 · 点击暂停" else "⏸️ 已暂停 · 点击继续",
+                            text = if (state.isPomodoroRunning) "🍅 专注中 · 点击暂停" else if (state.pomodoroActivePreset.isNotEmpty()) "⏸️ 已暂停 · 点击继续" else "🍅 点击下方时长直接开始",
                             color = if (state.isPomodoroRunning) Color(0xFFFFD54F) else Color.LightGray,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -572,11 +591,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             val isRunning = isSelected && state.isPomodoroRunning
                             Surface(
                                 onClick = {
-                                    if (isSelected) {
-                                        viewModel.togglePomodoro()
-                                    } else {
-                                        viewModel.startPomodoro(label, listOf(minutes))
-                                    }
+                                    // 需求4：点击直接开始计时或暂停，无需额外点击
+                                    viewModel.onPomodoroPresetClick(label, minutes)
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
@@ -614,11 +630,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             val isRunning = isSelected && state.isPomodoroRunning
                             Surface(
                                 onClick = {
-                                    if (isSelected) {
-                                        viewModel.togglePomodoro()
-                                    } else {
-                                        viewModel.startPomodoro(label, listOf(minutes))
-                                    }
+                                    // 需求4：点击直接开始计时或暂停，无需额外点击
+                                    viewModel.onPomodoroPresetClick(label, minutes)
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
@@ -651,6 +664,8 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             onClick = {
                                 if (isCustomRunning) {
                                     viewModel.pausePomodoro()
+                                } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
+                                    viewModel.resumePomodoro()
                                 } else {
                                     showPomodoroCustomDialog = true
                                 }
@@ -1055,43 +1070,49 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             }
                         }
 
-                        // 常用推荐模版快捷选择
+                        // 常用推荐模版快捷选择 (需求5：只保留 4+1, 6+2, 12+3, 15+5, 25+5, 45+15，需求4：点击直接开始倒计时)
                         Text(
-                            text = "常用专注模版快捷选择：",
+                            text = "常用专注模版（点击直接开始倒计时）：",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
                         val quickPresets = listOf(
-                            "15+5", "25+5", "45+15", "50+10",
-                            "25+5+25+15", "30", "45", "60"
+                            "4+1", "6+2", "12+3",
+                            "15+5", "25+5", "45+15"
                         )
-                        val presetRows = quickPresets.chunked(4)
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val presetRows = quickPresets.chunked(3)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             presetRows.forEach { rowItems ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     rowItems.forEach { preset ->
+                                        val isSelected = tempSeq == preset
                                         Surface(
-                                            onClick = { tempSeq = preset },
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = if (tempSeq == preset) Color(0xFF3A301D) else Color(0xFF1E1E1E),
+                                            onClick = {
+                                                // 需求4：点击预设直接开始倒计时，不需要额外点击
+                                                tempSeq = preset
+                                                viewModel.setPomodoroCustomSequence(preset)
+                                                showPomodoroCustomDialog = false
+                                            },
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isSelected) Color(0xFF3A301D) else Color(0xFF1E1E1E),
                                             border = BorderStroke(
                                                 1.dp,
-                                                if (tempSeq == preset) Color(0xFFFFD54F) else Color(0xFF444444)
+                                                if (isSelected) Color(0xFFFFD54F) else Color(0xFF444444)
                                             ),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Box(
                                                 contentAlignment = Alignment.Center,
-                                                modifier = Modifier.padding(vertical = 8.dp)
+                                                modifier = Modifier.padding(vertical = 10.dp)
                                             ) {
                                                 Text(
                                                     text = preset,
-                                                    fontSize = 12.sp,
-                                                    color = if (tempSeq == preset) Color(0xFFFFD54F) else Color.LightGray,
-                                                    fontWeight = if (tempSeq == preset) FontWeight.Bold else FontWeight.Normal
+                                                    fontSize = 13.5.sp,
+                                                    color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                                    fontWeight = FontWeight.Bold
                                                 )
                                             }
                                         }

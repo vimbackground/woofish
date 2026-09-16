@@ -41,9 +41,10 @@ data class WoodenFishUiState(
     val pomodoroStages: List<Int> = listOf(25),
     val currentPomodoroStageIndex: Int = 0,
     val pomodoroRemainingSeconds: Long = 25 * 60L,
-    val pomodoroActivePreset: String = "25分",
+    val pomodoroActivePreset: String = "",
     val pomodoroCustomSequence: String = "15+5",
-    val pomodoroStageFinishedTrigger: Long = 0L
+    val pomodoroStageFinishedTrigger: Long = 0L,
+    val isPomodoroSoundEnabled: Boolean = true
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -61,6 +62,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
     private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
     private val initialPomodoroCustomSeq: String = prefs.getString("key_pomodoro_custom_sequence", "15+5") ?: "15+5"
+    private val initialPomodoroSound: Boolean = prefs.getBoolean("key_pomodoro_sound_enabled", true)
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -79,7 +81,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isTimerEnabled = initialTimerEnabled,
             timerDurationMinutes = initialTimerMinutes,
             timerRemainingSeconds = initialTimerMinutes * 60L,
-            pomodoroCustomSequence = initialPomodoroCustomSeq
+            pomodoroCustomSequence = initialPomodoroCustomSeq,
+            isPomodoroSoundEnabled = initialPomodoroSound
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -373,13 +376,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         pomodoroJob = viewModelScope.launch {
             while (isActive) {
                 delay(1000L)
+                // 需求2：番茄钟专属轻柔背景秒针走动滴答音
+                if (_uiState.value.isPomodoroSoundEnabled) {
+                    audioPlayer.playPomodoroTick()
+                }
                 val curRemaining = _uiState.value.pomodoroRemainingSeconds - 1L
                 if (curRemaining <= 0L) {
                     val nextStageIdx = _uiState.value.currentPomodoroStageIndex + 1
                     val allStages = _uiState.value.pomodoroStages
                     if (nextStageIdx < allStages.size) {
                         // 阶段过渡：触发提示音并进入下一阶段（如 15分 -> 5分）
-                        audioPlayer.playTimerFinishedFeedback()
+                        if (_uiState.value.isPomodoroSoundEnabled) {
+                            audioPlayer.playTimerFinishedFeedback()
+                        }
                         _uiState.value = _uiState.value.copy(
                             currentPomodoroStageIndex = nextStageIdx,
                             pomodoroRemainingSeconds = allStages[nextStageIdx] * 60L,
@@ -387,7 +396,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     } else {
                         // 全部阶段圆满结束
-                        audioPlayer.playTimerFinishedFeedback()
+                        if (_uiState.value.isPomodoroSoundEnabled) {
+                            audioPlayer.playTimerFinishedFeedback()
+                        }
                         _uiState.value = _uiState.value.copy(
                             isPomodoroRunning = false,
                             currentPomodoroStageIndex = 0,
@@ -418,6 +429,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         pausePomodoro()
     }
 
+    fun togglePomodoroSound() {
+        val next = !_uiState.value.isPomodoroSoundEnabled
+        _uiState.value = _uiState.value.copy(isPomodoroSoundEnabled = next)
+        prefs.edit().putBoolean("key_pomodoro_sound_enabled", next).apply()
+    }
+
+    fun onPomodoroPresetClick(label: String, minutes: Int) {
+        val currentPreset = _uiState.value.pomodoroActivePreset
+        if (currentPreset == label) {
+            if (_uiState.value.isPomodoroRunning) {
+                pausePomodoro()
+            } else {
+                if (_uiState.value.pomodoroRemainingSeconds > 0L) {
+                    resumePomodoro()
+                } else {
+                    startPomodoro(label, listOf(minutes))
+                }
+            }
+        } else {
+            // 点击预设直接开始倒计时，不需要额外点击 (需求4)
+            startPomodoro(label, listOf(minutes))
+        }
+    }
+
     fun togglePomodoro(presetLabel: String? = null, stages: List<Int>? = null) {
         val currentPreset = _uiState.value.pomodoroActivePreset
         if (presetLabel == null || presetLabel == currentPreset) {
@@ -427,7 +462,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (_uiState.value.pomodoroRemainingSeconds > 0L) {
                     resumePomodoro()
                 } else {
-                    startPomodoro(currentPreset, _uiState.value.pomodoroStages)
+                    startPomodoro(currentPreset.ifEmpty { "25分" }, _uiState.value.pomodoroStages)
                 }
             }
         } else {
@@ -452,10 +487,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (_uiState.value.pomodoroRemainingSeconds > 0L) {
                 resumePomodoro()
             } else {
-                startPomodoro(_uiState.value.pomodoroActivePreset, _uiState.value.pomodoroStages)
+                startPomodoro(_uiState.value.pomodoroActivePreset.ifEmpty { "25分" }, _uiState.value.pomodoroStages)
             }
         }
-        audioPlayer.playHit(_uiState.value.currentMode, _uiState.value.soundIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
+        // 需求3：番茄钟模式不需要点击发声，仅保留触感轻微震动
+        if (_uiState.value.vibrationMs > 0) {
+            audioPlayer.vibrateManualKnock((_uiState.value.vibrationMs / 3).coerceIn(20, 50))
+        }
     }
 
     override fun onCleared() {

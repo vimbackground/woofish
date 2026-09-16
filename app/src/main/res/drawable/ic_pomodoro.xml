@@ -3,24 +3,27 @@
     android:height="200dp"
     android:viewportWidth="200"
     android:viewportHeight="200">
-    <!-- 番茄钟顶部果蒂 -->
+    <!-- 极简纯白实心圆形钟表底盘 (整块白底) -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 97,14 C 97,14 94,28 82,32 C 75,34 68,31 64,34 C 60,37 63,44 69,45 C 80,47 90,40 96,44 C 98,39 99,35 101,31 C 104,36 106,41 109,44 C 117,39 126,45 136,44 C 142,43 145,36 140,33 C 135,30 128,34 121,31 C 109,26 105,14 105,14 Z" />
-    <!-- 番茄钟圆润主体轮廓 -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M 100,22 A 78,78 0 1,0 100,178 A 78,78 0 1,0 100,22 Z" />
+
+    <!-- 黑色时针 (指向 10 点方向，坚实稳重) -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 100,42 C 60,42 24,68 24,112 C 24,156 60,188 100,188 C 140,188 176,156 176,112 C 176,68 140,42 100,42 Z M 100,172 C 68,172 39,145 39,112 C 39,79 68,56 100,56 C 132,56 161,79 161,112 C 161,145 132,172 100,172 Z" />
-    <!-- 内部钟表指针 (10:10 专注微笑角度) 与中心轴点 -->
+        android:strokeColor="#111111"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:pathData="M 100,100 L 64,78" />
+
+    <!-- 黑色分针 (指向 2 点方向，修长舒展) -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 100,105 C 104,105 107,108 107,112 C 107,116 104,119 100,119 C 96,119 93,116 93,112 C 93,108 96,105 100,105 Z" />
-    <!-- 分针 -->
+        android:strokeColor="#111111"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:pathData="M 100,100 L 152,70" />
+
+    <!-- 中心黑色轴点 -->
     <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 98,112 L 74,86 C 73,85 74,83 76,84 L 100,110 Z" />
-    <!-- 时针 -->
-    <path
-        android:fillColor="#EEEEEE"
-        android:pathData="M 100,112 L 126,90 C 127,89 128,91 127,92 L 102,114 Z" />
+        android:fillColor="#111111"
+        android:pathData="M 100,94 A 6,6 0 1,0 100,106 A 6,6 0 1,0 100,94 Z" />
 </vector>

@@ -32,7 +32,7 @@ enum class AppMode(
         id = "pomodoro",
         displayName = "番茄钟模式",
         defaultSubtitle = "专注",
-        soundNames = listOf("禅钟提示", "清脆滴答"),
+        soundNames = listOf("滴答音"),
         iconResId = R.drawable.ic_pomodoro
     );
 
