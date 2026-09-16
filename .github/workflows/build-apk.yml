@@ -33,7 +33,15 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Android Release APK
-        run: gradle :app:assembleRelease --stacktrace
+        run: |
+          gradle :app:assembleRelease --stacktrace > android_build.log 2>&1 || (cat android_build.log | tail -n 80; exit 1)
+
+      - name: Upload Android Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-log
+          path: android_build.log
 
       - name: Prepare APK Package
         id: prepare_apk
@@ -90,7 +98,19 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Windows Distributable
-        run: gradle :desktop:packageReleaseAppImage --stacktrace
+        run: |
+          gradle :desktop:packageReleaseAppImage --stacktrace *>&1 | Tee-Object -FilePath windows_build.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content windows_build.log | Select-Object -Last 80
+            exit $LASTEXITCODE
+          }
+
+      - name: Upload Windows Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-log
+          path: windows_build.log
 
       - name: Package Windows Zip
         id: prepare_zip
