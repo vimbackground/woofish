@@ -82,6 +82,25 @@ class AudioPlayer(private val context: Context) {
         }
     }
 
+    // 倒计时结束禅意反馈：播放首选音效并配合双段式提示震动
+    fun playTimerFinishedFeedback() {
+        if (woodenFishSounds.isNotEmpty()) {
+            soundPool.play(woodenFishSounds[0], 1f, 1f, 1, 0, 1f)
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val timings = longArrayOf(0, 150, 100, 250)
+                val amplitudes = intArrayOf(0, 220, 0, 255)
+                vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(400)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun playKnock(soundIndex: Int) {
         playHit(AppMode.WOODEN_FISH, soundIndex, isManual = true, vibrationMs = 120)
     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -244,18 +246,31 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 自动节奏设置按钮
-                IconButton(
-                    onClick = { viewModel.toggleAutoKnockDialog(true) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (state.isAutoKnockEnabled) R.drawable.ic_timer else R.drawable.ic_timer_outline
-                        ),
-                        contentDescription = "自动节奏设置",
-                        tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
-                    )
+                // 1. 自动节奏设置按钮 (包含清屏模式下的极简倒计时微显示)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.isTimerEnabled && state.isZenMode) {
+                        val m = state.timerRemainingSeconds / 60
+                        val s = state.timerRemainingSeconds % 60
+                        Text(
+                            text = String.format("%02d:%02d", m, s),
+                            color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.Gray,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(end = 2.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { viewModel.toggleAutoKnockDialog(true) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (state.isAutoKnockEnabled) R.drawable.ic_timer else R.drawable.ic_timer_outline
+                            ),
+                            contentDescription = "自动节奏设置",
+                            tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
+                        )
+                    }
                 }
 
                 // 2. 清屏开关按钮
@@ -287,8 +302,10 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
         }
 
         // -------------------------------------------------------------
-        // 2. 大计数与文字（等宽排版稳定无抖动，支持自定义副标题）
+        // 2. 大计数与文字（等宽排版稳定无抖动，支持长按清零与倒计时浮动胶囊）
         // -------------------------------------------------------------
+        var showResetConfirmDialog by remember { mutableStateOf(false) }
+
         AnimatedVisibility(
             visible = !state.isZenMode,
             enter = fadeIn(tween(200)),
@@ -312,7 +329,16 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                         fontFeatureSettings = "tnum",
                         textAlign = TextAlign.Center
                     ),
-                    letterSpacing = 2.sp
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.pointerInput(state.count) {
+                        detectTapGestures(
+                            onLongPress = {
+                                if (state.count > 0L) {
+                                    showResetConfirmDialog = true
+                                }
+                            }
+                        )
+                    }
                 )
                 Text(
                     text = state.subtitle,
@@ -320,7 +346,62 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
+
+                // 首页倒计时浮动微光药丸胶囊
+                if (state.isTimerEnabled) {
+                    val m = state.timerRemainingSeconds / 60
+                    val s = state.timerRemainingSeconds % 60
+                    val timeStr = String.format("%02d:%02d", m, s)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        onClick = { viewModel.toggleAutoKnockDialog(true) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (state.isAutoKnockEnabled) Color(0x33FFD54F) else Color(0xFF222222),
+                        border = BorderStroke(
+                            1.dp,
+                            if (state.isAutoKnockEnabled) Color(0x88FFD54F) else Color(0xFF444444)
+                        )
+                    ) {
+                        Text(
+                            text = if (state.isAutoKnockEnabled) "⏱️ 倒计时 $timeStr" else "⏱️ 定时 $timeStr (待开始)",
+                            color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.LightGray,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                }
             }
+        }
+
+        // 长按清零计数确认弹窗
+        if (showResetConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetConfirmDialog = false },
+                containerColor = Color(0xFF262626),
+                title = {
+                    Text(text = "清零计数", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(text = "是否将当前累积的功德/击打次数 (${state.count}) 清零？", fontSize = 14.sp, color = Color.LightGray)
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.resetCount()
+                            showResetConfirmDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                    ) {
+                        Text(text = "清零", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetConfirmDialog = false }) {
+                        Text(text = "取消", color = Color.Gray)
+                    }
+                }
+            )
         }
 
         // -------------------------------------------------------------
@@ -432,7 +513,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                 }
                             },
                             shape = RoundedCornerShape(10.dp),
-                            color = Color.Transparent,
+                            color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
                             border = BorderStroke(
                                 width = 1.2.dp,
                                 color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
@@ -473,7 +554,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                                 }
                             },
                             shape = RoundedCornerShape(10.dp),
-                            color = Color.Transparent,
+                            color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
                             border = BorderStroke(
                                 width = 1.2.dp,
                                 color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
@@ -508,7 +589,7 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                             }
                         },
                         shape = RoundedCornerShape(10.dp),
-                        color = Color.Transparent,
+                        color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
                         border = BorderStroke(
                             width = 1.2.dp,
                             color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
@@ -534,8 +615,12 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 快速自定义 BPM 弹窗
+        // 快速自定义 BPM 弹窗（包含节拍速度设置滑杆与左右加减以1为单位的微调按钮）
         if (showQuickCustomBpmDialog) {
+            var tempBpm by remember(showQuickCustomBpmDialog) {
+                mutableIntStateOf(state.bpm)
+            }
+
             AlertDialog(
                 onDismissRequest = { showQuickCustomBpmDialog = false },
                 containerColor = Color(0xFF262626),
@@ -548,29 +633,121 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                     )
                 },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            text = "请输入 30 到 300 之间的每分钟拍数：",
-                            fontSize = 13.sp,
-                            color = Color.LightGray
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // 1. 醒目大字展示当前 BPM 与折算单拍秒数
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "$tempBpm",
+                                    fontSize = 42.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFFD54F)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "BPM",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.LightGray,
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+                            }
+                            val interval = 60f / tempBpm
+                            Text(
+                                text = "约 ${String.format("%.2f", interval)} 秒/拍 · 调节范围 30~300",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+
+                        // 2. 节拍速度设置滑杆与左右加减微调按钮（步进 1）
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // [-] 减 1 按钮
+                            FilledIconButton(
+                                onClick = {
+                                    if (tempBpm > 30) {
+                                        tempBpm -= 1
+                                        quickCustomBpmText = tempBpm.toString()
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF383838),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Text(text = "−", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            // 滑杆
+                            Slider(
+                                value = tempBpm.toFloat(),
+                                onValueChange = {
+                                    val rounded = it.roundToInt().coerceIn(30, 300)
+                                    tempBpm = rounded
+                                    quickCustomBpmText = rounded.toString()
+                                },
+                                valueRange = 30f..300f,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color(0xFFFFD54F),
+                                    activeTrackColor = Color(0xFFFFD54F),
+                                    inactiveTrackColor = Color(0xFF383838)
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // [+] 加 1 按钮
+                            FilledIconButton(
+                                onClick = {
+                                    if (tempBpm < 300) {
+                                        tempBpm += 1
+                                        quickCustomBpmText = tempBpm.toString()
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF383838),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Text(text = "+", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // 3. 直接输入数字框
                         OutlinedTextField(
                             value = quickCustomBpmText,
-                            onValueChange = {
-                                if (it.length <= 4 && it.all { ch -> ch.isDigit() }) {
-                                    quickCustomBpmText = it
+                            onValueChange = { text ->
+                                if (text.length <= 4 && text.all { it.isDigit() }) {
+                                    quickCustomBpmText = text
+                                    val parsed = text.toIntOrNull()
+                                    if (parsed != null && parsed in 30..300) {
+                                        tempBpm = parsed
+                                    }
                                 }
                             },
+                            label = { Text("直接输入数值", color = Color.Gray, fontSize = 12.sp) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    val parsed = quickCustomBpmText.toIntOrNull()
-                                    if (parsed != null && parsed in 30..300) {
-                                        viewModel.setBpm(parsed)
-                                        viewModel.toggleAutoKnock(true)
-                                        showQuickCustomBpmDialog = false
-                                    }
+                                    val parsed = quickCustomBpmText.toIntOrNull()?.coerceIn(30, 300) ?: tempBpm
+                                    viewModel.setBpm(parsed)
+                                    viewModel.toggleAutoKnock(true)
+                                    showQuickCustomBpmDialog = false
                                 }
                             ),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -586,12 +763,10 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 confirmButton = {
                     Button(
                         onClick = {
-                            val parsed = quickCustomBpmText.toIntOrNull()
-                            if (parsed != null && parsed in 30..300) {
-                                viewModel.setBpm(parsed)
-                                viewModel.toggleAutoKnock(true)
-                                showQuickCustomBpmDialog = false
-                            }
+                            val parsed = quickCustomBpmText.toIntOrNull()?.coerceIn(30, 300) ?: tempBpm
+                            viewModel.setBpm(parsed)
+                            viewModel.toggleAutoKnock(true)
+                            showQuickCustomBpmDialog = false
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
                     ) {
@@ -614,7 +789,9 @@ fun WoodenFishScreen(viewModel: MainViewModel) {
                 state = state,
                 onDismiss = { viewModel.toggleAutoKnockDialog(false) },
                 onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
-                onBpmChange = { viewModel.setBpm(it) }
+                onBpmChange = { viewModel.setBpm(it) },
+                onToggleTimer = { viewModel.toggleTimer(it) },
+                onSetTimerDuration = { viewModel.setTimerDuration(it) }
             )
         }
 

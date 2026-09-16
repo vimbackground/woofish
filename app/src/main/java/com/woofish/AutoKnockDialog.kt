@@ -32,13 +32,12 @@ fun AutoKnockDialog(
     state: WoodenFishUiState,
     onDismiss: () -> Unit,
     onToggleAutoKnock: (Boolean) -> Unit,
-    onBpmChange: (Int) -> Unit
+    onBpmChange: (Int) -> Unit,
+    onToggleTimer: (Boolean) -> Unit,
+    onSetTimerDuration: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    var showCustomInputDialog by remember { mutableStateOf(false) }
-    var inputBpmText by remember { mutableStateOf(state.bpm.toString()) }
 
     // 智能环境音乐节奏侦测器
     val beatDetector = remember { AudioBeatDetector() }
@@ -121,7 +120,7 @@ fun AutoKnockDialog(
                             text = if (state.isAutoKnockEnabled) {
                                 "运行中 · ${state.bpm} BPM (${String.format("%.2f", intervalSec)} 秒/拍)"
                             } else {
-                                "已暂停"
+                                "已暂停 · 当前 ${state.bpm} BPM"
                             },
                             fontSize = 12.sp,
                             color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.Gray
@@ -139,122 +138,183 @@ fun AutoKnockDialog(
                     )
                 }
 
-                // 2. BPM 节奏滑块调节 (30 - 240 BPM)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // 2. 倒计时器 (定时停止)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "节拍速度 (BPM)", fontSize = 14.sp, color = Color.White)
-                        Surface(
-                            onClick = {
-                                inputBpmText = state.bpm.toString()
-                                showCustomInputDialog = true
-                            },
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF2A2A2A)
-                        ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "倒计时器", fontSize = 15.sp, color = Color.White)
+                            val timerStatusText = when {
+                                !state.isTimerEnabled -> "已关闭 · 敲击不限时"
+                                state.isAutoKnockEnabled -> {
+                                    val m = state.timerRemainingSeconds / 60
+                                    val s = state.timerRemainingSeconds % 60
+                                    "倒计中 · 剩余 ${String.format("%02d:%02d", m, s)} (到期停止)"
+                                }
+                                else -> "设为 ${state.timerDurationMinutes} 分钟 · 启动后自动倒计"
+                            }
                             Text(
-                                text = "${state.bpm} BPM ✍️",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD54F),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                text = timerStatusText,
+                                fontSize = 12.sp,
+                                color = if (state.isTimerEnabled && state.isAutoKnockEnabled) Color(0xFFFFD54F) else if (state.isTimerEnabled) Color.LightGray else Color.Gray
                             )
                         }
-                    }
-
-                    Slider(
-                        value = state.bpm.toFloat(),
-                        onValueChange = { onBpmChange(it.roundToInt()) },
-                        valueRange = 30f..240f,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFFFFD54F),
-                            activeTrackColor = Color(0xFFFFD54F),
-                            inactiveTrackColor = Color(0xFF333333)
+                        Switch(
+                            checked = state.isTimerEnabled,
+                            onCheckedChange = onToggleTimer,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFFFFD54F),
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color(0xFF333333)
+                            )
                         )
-                    )
-
-                    // 音乐常见节奏预设与自定义输入快捷栏（两排布局）
-                    val allPresets = remember(state.currentMode) {
-                        state.currentMode.getTempoPresets()
                     }
-                    val topRowPresets = allPresets.take(3)
-                    val bottomRowPresets = allPresets.drop(3)
 
-                    Text(text = "常用节拍速度：", fontSize = 12.sp, color = Color.Gray)
+                    // 倒计时预设选择 (开启时展示)
+                    AnimatedVisibility(visible = state.isTimerEnabled) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(text = "常用专注时长：", fontSize = 12.sp, color = Color.Gray)
+                            val timerPresets = listOf(5, 10, 15, 20, 30, 45, 60)
+                            val row1 = timerPresets.take(4) // 5, 10, 15, 20
+                            val row2 = timerPresets.drop(4) // 30, 45, 60
 
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // 上排三项：Lento、Adagio、Andante
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            topRowPresets.forEach { (label, value) ->
-                                val isSelected = state.bpm == value
-                                Surface(
-                                    onClick = { onBpmChange(value) },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
-                                        Text(
-                                            text = label,
-                                            fontSize = 11.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // 下排三项：Moderato、Allegro、自定义
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            bottomRowPresets.forEach { (label, value) ->
-                                val isSelected = state.bpm == value
-                                Surface(
-                                    onClick = { onBpmChange(value) },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
-                                        Text(
-                                            text = label,
-                                            fontSize = 11.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // 第六项：自定义输入项
-                            Surface(
-                                onClick = {
-                                    inputBpmText = state.bpm.toString()
-                                    showCustomInputDialog = true
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF2D2A22),
-                                modifier = Modifier.weight(1f)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
-                                    Text(
-                                        text = "自定义 ✍️",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFFFFD54F)
-                                    )
+                                row1.forEach { minutes ->
+                                    val isSelected = state.timerDurationMinutes == minutes
+                                    Surface(
+                                        onClick = { onSetTimerDuration(minutes) },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                        border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                            Text(
+                                                text = "${minutes}分",
+                                                fontSize = 11.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                            )
+                                        }
+                                    }
                                 }
+                            }
+
+                            var showCustomTimerDialog by remember { mutableStateOf(false) }
+                            var customTimerText by remember { mutableStateOf(state.timerDurationMinutes.toString()) }
+                            val isCustomDuration = state.timerDurationMinutes !in timerPresets
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                row2.forEach { minutes ->
+                                    val isSelected = state.timerDurationMinutes == minutes
+                                    Surface(
+                                        onClick = { onSetTimerDuration(minutes) },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
+                                        border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                            Text(
+                                                text = "${minutes}分",
+                                                fontSize = 11.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // 第 4 项：自定义时长输入项
+                                Surface(
+                                    onClick = {
+                                        customTimerText = state.timerDurationMinutes.toString()
+                                        showCustomTimerDialog = true
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isCustomDuration) Color(0xFF3A301D) else Color(0xFF2D2A22),
+                                    border = if (isCustomDuration) ButtonDefaults.outlinedButtonBorder else null,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                        Text(
+                                            text = if (isCustomDuration) "${state.timerDurationMinutes}分 ✍️" else "自定义 ✍️",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFFFFD54F)
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (showCustomTimerDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showCustomTimerDialog = false },
+                                    containerColor = Color(0xFF262626),
+                                    title = {
+                                        Text(text = "自定义专注时长 (分钟)", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                    },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Text(text = "请输入 1 到 180 之间的倒计时分钟数：", fontSize = 13.sp, color = Color.LightGray)
+                                            OutlinedTextField(
+                                                value = customTimerText,
+                                                onValueChange = {
+                                                    if (it.length <= 3 && it.all { ch -> ch.isDigit() }) {
+                                                        customTimerText = it
+                                                    }
+                                                },
+                                                singleLine = true,
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                keyboardActions = KeyboardActions(
+                                                    onDone = {
+                                                        val p = customTimerText.toIntOrNull()
+                                                        if (p != null && p in 1..180) {
+                                                            onSetTimerDuration(p)
+                                                            showCustomTimerDialog = false
+                                                        }
+                                                    }
+                                                ),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedTextColor = Color.White,
+                                                    unfocusedTextColor = Color.White,
+                                                    focusedBorderColor = Color(0xFFFFD54F),
+                                                    unfocusedBorderColor = Color.Gray
+                                                ),
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                val p = customTimerText.toIntOrNull()
+                                                if (p != null && p in 1..180) {
+                                                    onSetTimerDuration(p)
+                                                    showCustomTimerDialog = false
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                                        ) {
+                                            Text(text = "确定", color = Color.Black, fontWeight = FontWeight.Bold)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showCustomTimerDialog = false }) {
+                                            Text(text = "取消", color = Color.Gray)
+                                        }
+                                    }
+                                )
                             }
                         }
                     }
@@ -424,7 +484,7 @@ fun AutoKnockDialog(
                                 color = Color(0xFF333333)
                             ) {
                                 Text(
-                                    text = "🖐️ 点击测速 (Tap)",
+                                    text = "🖐️ 点击测速",
                                     fontSize = 11.sp,
                                     color = Color.White,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -446,65 +506,4 @@ fun AutoKnockDialog(
             }
         }
     )
-
-    // 手动输入数字弹窗
-    if (showCustomInputDialog) {
-        AlertDialog(
-            onDismissRequest = { showCustomInputDialog = false },
-            containerColor = Color(0xFF262626),
-            title = {
-                Text(text = "自定义节拍速度 (BPM)", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(text = "请输入 30 到 300 之间的每分钟拍数：", fontSize = 13.sp, color = Color.LightGray)
-                    OutlinedTextField(
-                        value = inputBpmText,
-                        onValueChange = {
-                            if (it.length <= 4 && it.all { ch -> ch.isDigit() }) {
-                                inputBpmText = it
-                            }
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                val parsed = inputBpmText.toIntOrNull()
-                                if (parsed != null && parsed in 30..300) {
-                                    onBpmChange(parsed)
-                                    showCustomInputDialog = false
-                                }
-                            }
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFFFFD54F),
-                            unfocusedBorderColor = Color.Gray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val parsed = inputBpmText.toIntOrNull()
-                        if (parsed != null && parsed in 30..300) {
-                            onBpmChange(parsed)
-                            showCustomInputDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
-                ) {
-                    Text(text = "确定", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCustomInputDialog = false }) {
-                    Text(text = "取消", color = Color.Gray)
-                }
-            }
-        )
-    }
 }

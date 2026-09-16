@@ -31,7 +31,11 @@ data class WoodenFishUiState(
     val showAutoKnockDialog: Boolean = false,
     val beatIndex: Long = 0L, // 敲击/节拍累计索引，用于驱动受力回弹与节拍摆动动画
     val knockTrigger: Long = 0L, // 用于驱动受力回弹与节拍摆动动画
-    val vibrationMs: Int = 120 // 敲击震动强度 (0~500ms，默认120ms)
+    val vibrationMs: Int = 120, // 敲击震动强度 (0~500ms，默认120ms)
+    val isTimerEnabled: Boolean = false, // 是否开启倒计时功能
+    val timerDurationMinutes: Int = 15, // 倒计时设定时长 (分钟)
+    val timerRemainingSeconds: Long = 15 * 60L, // 倒计时当前剩余秒数
+    val timerFinishedTrigger: Long = 0L // 倒计时结束触发标记
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,11 +43,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("wooden_fish_prefs", Context.MODE_PRIVATE)
 
     private var autoKnockJob: Job? = null
+    private var timerJob: Job? = null
     private var lastManualHitTime: Long = 0L
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
     private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
+    private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
+    private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -58,7 +65,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
             bpm = initialBpm,
             autoKnockIntervalMs = (60000L / initialBpm).coerceIn(200L, 2000L),
-            vibrationMs = initialVibrationMs
+            vibrationMs = initialVibrationMs,
+            isTimerEnabled = initialTimerEnabled,
+            timerDurationMinutes = initialTimerMinutes,
+            timerRemainingSeconds = initialTimerMinutes * 60L
         )
     )
     val uiState: StateFlow<WoodenFishUiState> = _uiState.asStateFlow()
@@ -151,9 +161,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
         prefs.edit().putInt("key_bpm", safeBpm).apply()
 
-        // 如果正在自动敲击，重启协程以应用新频率
+        // 如果正在自动敲击，平滑重启敲击协程以应用新频率，保持倒计时正常运转
         if (_uiState.value.isAutoKnockEnabled) {
-            toggleAutoKnock(true)
+            autoKnockJob?.cancel()
+            autoKnockJob = viewModelScope.launch {
+                while (isActive) {
+                    onHit(isManual = false)
+                    delay(intervalMs)
+                }
+            }
         }
     }
 
@@ -217,6 +233,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(isAutoKnockEnabled = nextState)
         
         autoKnockJob?.cancel()
+        timerJob?.cancel()
+
         if (nextState) {
             autoKnockJob = viewModelScope.launch {
                 while (isActive) {
@@ -224,6 +242,78 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     delay(_uiState.value.autoKnockIntervalMs)
                 }
             }
+            if (_uiState.value.isTimerEnabled) {
+                startTimerCountdown()
+            }
+        }
+    }
+
+    private fun startTimerCountdown() {
+        timerJob?.cancel()
+        if (!_uiState.value.isTimerEnabled) return
+
+        if (_uiState.value.timerRemainingSeconds <= 0L) {
+            _uiState.value = _uiState.value.copy(
+                timerRemainingSeconds = _uiState.value.timerDurationMinutes * 60L
+            )
+        }
+
+        timerJob = viewModelScope.launch {
+            while (isActive && _uiState.value.timerRemainingSeconds > 0L) {
+                delay(1000L)
+                val remaining = _uiState.value.timerRemainingSeconds - 1L
+                if (remaining <= 0L) {
+                    _uiState.value = _uiState.value.copy(
+                        timerRemainingSeconds = _uiState.value.timerDurationMinutes * 60L,
+                        timerFinishedTrigger = System.currentTimeMillis()
+                    )
+                    audioPlayer.playTimerFinishedFeedback()
+                    toggleAutoKnock(false)
+                    break
+                } else {
+                    _uiState.value = _uiState.value.copy(timerRemainingSeconds = remaining)
+                }
+            }
+        }
+    }
+
+    fun toggleTimer(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            isTimerEnabled = enabled,
+            timerRemainingSeconds = if (enabled && _uiState.value.timerRemainingSeconds <= 0L) {
+                _uiState.value.timerDurationMinutes * 60L
+            } else {
+                _uiState.value.timerRemainingSeconds
+            }
+        )
+        prefs.edit().putBoolean("key_timer_enabled", enabled).apply()
+
+        if (enabled && _uiState.value.isAutoKnockEnabled) {
+            startTimerCountdown()
+        } else if (!enabled) {
+            timerJob?.cancel()
+        }
+    }
+
+    fun setTimerDuration(minutes: Int) {
+        val safeMinutes = minutes.coerceIn(1, 180)
+        _uiState.value = _uiState.value.copy(
+            timerDurationMinutes = safeMinutes,
+            timerRemainingSeconds = safeMinutes * 60L
+        )
+        prefs.edit().putInt("key_timer_duration_minutes", safeMinutes).apply()
+
+        if (_uiState.value.isTimerEnabled && _uiState.value.isAutoKnockEnabled) {
+            startTimerCountdown()
+        }
+    }
+
+    fun resetTimer() {
+        _uiState.value = _uiState.value.copy(
+            timerRemainingSeconds = _uiState.value.timerDurationMinutes * 60L
+        )
+        if (_uiState.value.isTimerEnabled && _uiState.value.isAutoKnockEnabled) {
+            startTimerCountdown()
         }
     }
 
@@ -241,6 +331,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         autoKnockJob?.cancel()
+        timerJob?.cancel()
         audioPlayer.release()
     }
 }
