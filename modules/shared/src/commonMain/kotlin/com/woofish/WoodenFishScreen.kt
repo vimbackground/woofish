@@ -17,6 +17,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -45,7 +46,7 @@ import kotlinx.coroutines.delay
 fun Modifier.detectInstantTap(
     enabled: Boolean = true,
     onDown: () -> Unit,
-    onUp: () -> Unit
+    onUp: () -> Unit = {}
 ): Modifier = if (enabled) {
     this.pointerInput(enabled) {
         awaitEachGesture {
@@ -417,26 +418,38 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
 
         // -------------------------------------------------------------
         // 3. 居中区域：
-        // 在番茄钟模式且清屏时：居中仅显示大字倒计时（不显示乐器图示）；
-        // 其他情况下：居中显示乐器图示（横屏下位于右侧，与左侧计数形成中轴线上的体量均衡）
+        // 在番茄钟模式且清屏时：居中仅显示大字倒计时（完全不显示乐器图示，避免与数字重叠）；
+        // 其他情况下（常规模式、以及番茄钟正常显示时）：居中显示乐器图示（横屏下位于右侧）
         // -------------------------------------------------------------
         if (state.isZenMode && state.currentMode == AppMode.POMODORO) {
             val m = state.pomodoroRemainingSeconds / 60
             val s = state.pomodoroRemainingSeconds % 60
             val timeStr = String.format("%02d:%02d", m, s)
-            Text(
-                text = timeStr,
-                color = Color.White,
-                fontSize = if (isLandscape) 100.sp else 80.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                style = TextStyle(
-                    fontFeatureSettings = "tnum",
-                    textAlign = TextAlign.Center
-                ),
-                letterSpacing = 4.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .detectInstantTap(
+                        enabled = !state.isFullScreenTapEnabled,
+                        onDown = {
+                            viewModel.onPomodoroTap()
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = timeStr,
+                    color = Color.White,
+                    fontSize = if (isLandscape) 100.sp else 80.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    style = TextStyle(
+                        fontFeatureSettings = "tnum",
+                        textAlign = TextAlign.Center
+                    ),
+                    letterSpacing = 4.sp
+                )
+            }
+        } else {
             val isWoodenFish = state.currentMode == AppMode.WOODEN_FISH
             val instrumentSize = if (state.isZenMode) {
                 if (isLandscape) 250.dp else if (isWoodenFish) 180.dp else 240.dp
@@ -552,13 +565,13 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             exit = fadeOut(tween(200)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (isLandscape) 20.dp else 32.dp)
+                .padding(bottom = if (isLandscape) 40.dp else 64.dp)
         ) {
             val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0x33000000),
-                border = BorderStroke(1.dp, if (isRunning) Color(0x66FFD54F) else Color(0x33FFFFFF)),
+                shape = CircleShape,
+                color = Color(0x44000000),
+                border = BorderStroke(1.5.dp, if (isRunning) Color(0xAAFFD54F) else Color(0x55FFFFFF)),
                 modifier = Modifier
                     .pointerInput(isRunning, state.currentMode) {
                         detectTapGestures(
@@ -588,19 +601,19 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 26.dp, vertical = 11.dp)
                 ) {
                     Text(
                         text = if (isRunning) "⏸" else "▶",
-                        fontSize = 13.sp,
-                        color = if (isRunning) Color(0xCCFFD54F) else Color(0x88CCCCCC)
+                        fontSize = 16.sp,
+                        color = if (isRunning) Color(0xFFFFD54F) else Color(0xFFDDDDDD)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (isRunning) "暂停" else "继续",
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (isRunning) Color(0xCCFFD54F) else Color(0x88CCCCCC)
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isRunning) Color(0xFFFFD54F) else Color(0xFFDDDDDD)
                     )
                 }
             }
@@ -671,19 +684,26 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             modifier = Modifier
                                 .weight(1f)
                                 .height(46.dp)
-                                .pointerInput(isCustomSelected, isCustomRunning) {
+                                .pointerInput(isCustomSelected, isCustomRunning, state.pomodoroRemainingSeconds, state.pomodoroCustomSequence) {
                                     detectTapGestures(
                                         onTap = {
-                                            if (isCustomRunning) {
-                                                viewModel.pausePomodoro()
-                                            } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
-                                                viewModel.resumePomodoro()
+                                            if (!isCustomSelected) {
+                                                // 未激活自定义：单击进入设置
+                                                showPomodoroCustomDialog = true
                                             } else {
-                                                val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
-                                                viewModel.startPomodoro("自定义", stages)
+                                                // 已激活自定义：单击开关
+                                                if (isCustomRunning) {
+                                                    viewModel.pausePomodoro()
+                                                } else if (state.pomodoroRemainingSeconds > 0L) {
+                                                    viewModel.resumePomodoro()
+                                                } else {
+                                                    val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
+                                                    viewModel.startPomodoro("自定义", stages)
+                                                }
                                             }
                                         },
                                         onLongPress = {
+                                            // 任何时间：长按均进行自定义设置
                                             showPomodoroCustomDialog = true
                                             if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
                                         }
@@ -742,7 +762,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             }
                         }
 
-                        // 自定义 BPM (长按进入配置，短按暂停/继续)
+                        // 自定义 BPM (未激活时单击进设置，激活时单击开关，长按均进设置)
                         val isCustomSelected = state.tempoActivePreset == "自定义"
                         val isPlayingCustom = isCustomSelected && state.isAutoKnockEnabled
                         Surface(
@@ -758,9 +778,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 .pointerInput(isCustomSelected, isPlayingCustom, state.customBpm) {
                                     detectTapGestures(
                                         onTap = {
-                                            viewModel.onTempoCustomClick()
+                                            if (!isCustomSelected) {
+                                                // 未激活自定义：单击进入设置
+                                                quickCustomBpmText = state.customBpm.toString()
+                                                showQuickCustomBpmDialog = true
+                                            } else {
+                                                // 已激活自定义：单击开关
+                                                viewModel.onTempoCustomClick()
+                                            }
                                         },
                                         onLongPress = {
+                                            // 任何时间：长按均进行自定义设置
                                             quickCustomBpmText = state.customBpm.toString()
                                             showQuickCustomBpmDialog = true
                                             if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
@@ -879,19 +907,26 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .pointerInput(isCustomSelected, isCustomRunning) {
+                                    .pointerInput(isCustomSelected, isCustomRunning, state.pomodoroRemainingSeconds, state.pomodoroCustomSequence) {
                                         detectTapGestures(
                                             onTap = {
-                                                if (isCustomRunning) {
-                                                    viewModel.pausePomodoro()
-                                                } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
-                                                    viewModel.resumePomodoro()
+                                                if (!isCustomSelected) {
+                                                    // 未激活自定义：单击进入设置
+                                                    showPomodoroCustomDialog = true
                                                 } else {
-                                                    val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
-                                                    viewModel.startPomodoro("自定义", stages)
+                                                    // 已激活自定义：单击开关
+                                                    if (isCustomRunning) {
+                                                        viewModel.pausePomodoro()
+                                                    } else if (state.pomodoroRemainingSeconds > 0L) {
+                                                        viewModel.resumePomodoro()
+                                                    } else {
+                                                        val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
+                                                        viewModel.startPomodoro("自定义", stages)
+                                                    }
                                                 }
                                             },
                                             onLongPress = {
+                                                // 任何时间：长按均进行自定义设置
                                                 showPomodoroCustomDialog = true
                                                 if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
                                             }
@@ -1009,9 +1044,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     .pointerInput(isCustomSelected, isPlayingCustom, state.customBpm) {
                                         detectTapGestures(
                                             onTap = {
-                                                viewModel.onTempoCustomClick()
+                                                if (!isCustomSelected) {
+                                                    // 未激活自定义：单击进入设置
+                                                    quickCustomBpmText = state.customBpm.toString()
+                                                    showQuickCustomBpmDialog = true
+                                                } else {
+                                                    // 已激活自定义：单击开关
+                                                    viewModel.onTempoCustomClick()
+                                                }
                                             },
                                             onLongPress = {
+                                                // 任何时间：长按均进行自定义设置
                                                 quickCustomBpmText = state.customBpm.toString()
                                                 showQuickCustomBpmDialog = true
                                                 if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
