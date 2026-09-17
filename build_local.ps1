@@ -52,7 +52,7 @@ Write-Host ""
 
 # 1. 提取版本号
 $gradlePath = Join-Path $PSScriptRoot "modules\windows\build.gradle.kts"
-$APP_VER = "1.1.0"
+$APP_VER = "1.2.0"
 if (Test-Path $gradlePath) {
     $vLine = Get-Content $gradlePath | Where-Object { $_ -match "packageVersion" } | Select-Object -First 1
     if ($vLine -and $vLine.Contains('"')) {

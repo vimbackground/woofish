@@ -61,6 +61,7 @@ class DesktopAudioPlayer : IAudioPlayer {
     private val drumPools = mutableListOf<PreloadedClipPool>()
     private val pomodoroPools = mutableListOf<PreloadedClipPool>()
     private var pomodoroTickPool: PreloadedClipPool? = null
+    private var trianglePool: PreloadedClipPool? = null
 
     private var bgmClip: Clip? = null
     private var currentBgmPath: String? = null
@@ -86,6 +87,11 @@ class DesktopAudioPlayer : IAudioPlayer {
             val pool = PreloadedClipPool(it)
             pomodoroTickPool = pool
             pomodoroPools.add(pool)
+        }
+
+        // 5. 倒计时结束真实三角铁敲击提示音
+        loadResource("raw/sound_triangle.wav")?.let {
+            trianglePool = PreloadedClipPool(it)
         }
     }
 
@@ -113,7 +119,9 @@ class DesktopAudioPlayer : IAudioPlayer {
     }
 
     override fun playTimerFinishedFeedback() {
-        if (woodenFishPools.isNotEmpty()) {
+        if (trianglePool != null) {
+            trianglePool?.play(1.0f)
+        } else if (woodenFishPools.isNotEmpty()) {
             woodenFishPools[0].play(1.0f)
         }
     }

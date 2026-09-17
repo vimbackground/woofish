@@ -16,6 +16,7 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
     private val drumSounds = mutableListOf<Int>()
     private val pomodoroSounds = mutableListOf<Int>()
     private var pomodoroTickSound: Int = 0
+    private var triangleSound: Int = 0
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
 
@@ -56,6 +57,9 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         // 4. 番茄钟专属背景轻柔秒针走动滴答音
         pomodoroTickSound = soundPool.load(context, R.raw.sound_pomodoro_tick, 1)
         pomodoroSounds.add(pomodoroTickSound)
+
+        // 5. 倒计时结束真实三角铁敲击提示音
+        triangleSound = soundPool.load(context, R.raw.sound_triangle, 1)
     }
 
     override fun playPomodoroTick() {
@@ -95,9 +99,11 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         }
     }
 
-    // 倒计时结束禅意反馈：播放首选音效并配合双段式提示震动
+    // 倒计时结束禅意反馈：播放真实三角铁清脆提示音并配合双段式提示震动
     override fun playTimerFinishedFeedback() {
-        if (woodenFishSounds.isNotEmpty()) {
+        if (triangleSound != 0) {
+            soundPool.play(triangleSound, 1f, 1f, 1, 0, 1f)
+        } else if (woodenFishSounds.isNotEmpty()) {
             soundPool.play(woodenFishSounds[0], 1f, 1f, 1, 0, 1f)
         }
         try {

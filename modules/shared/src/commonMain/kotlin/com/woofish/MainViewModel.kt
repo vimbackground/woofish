@@ -37,6 +37,8 @@ data class WoodenFishUiState(
     val timerDurationMinutes: Int = 15, // 倒计时设定时长 (分钟)
     val timerRemainingSeconds: Long = 15 * 60L, // 倒计时当前剩余秒数
     val timerFinishedTrigger: Long = 0L, // 倒计时结束触发标记
+    val tempoActivePreset: String = "", // 节奏模式当前选中的预设或"自定义"
+    val customBpm: Int = 60, // 自定义独立BPM设置值
     // 番茄钟专注模式专属状态
     val isPomodoroRunning: Boolean = false,
     val pomodoroStages: List<Int> = listOf(25),
@@ -63,6 +65,8 @@ open class MainViewModel(
 
     private val initialMode: AppMode = AppMode.fromId(prefs.getString("key_mode", AppMode.WOODEN_FISH.id) ?: AppMode.WOODEN_FISH.id)
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
+    private val initialCustomBpm: Int = prefs.getInt("key_custom_bpm", 60)
+    private val initialTempoPreset: String = prefs.getString("key_tempo_active_preset", "") ?: ""
     private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
     private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
     private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
@@ -77,7 +81,7 @@ open class MainViewModel(
             bgmVolume = prefs.getFloat("key_volume", 0.3f),
             customBgmUri = prefs.getString("key_bgm_uri", null),
             customBgmTitle = prefs.getString("key_bgm_title", null),
-            soundIndex = prefs.getInt("key_sound_${initialMode.id}", 0),
+            soundIndex = prefs.getInt("key_sound_${initialMode.id}", if (initialMode == AppMode.WOODEN_FISH) 1 else 0),
             isAnimationEnabled = prefs.getBoolean("key_animation_enabled", true),
             isFullScreenTapEnabled = prefs.getBoolean("key_full_screen_tap", true),
             bpm = initialBpm,
@@ -86,6 +90,8 @@ open class MainViewModel(
             isTimerEnabled = initialTimerEnabled,
             timerDurationMinutes = initialTimerMinutes,
             timerRemainingSeconds = initialTimerMinutes * 60L,
+            tempoActivePreset = initialTempoPreset,
+            customBpm = initialCustomBpm,
             pomodoroCustomSequence = initialPomodoroCustomSeq,
             isPomodoroSoundEnabled = initialPomodoroSound
         )
@@ -130,7 +136,8 @@ open class MainViewModel(
 
     fun setAppMode(mode: AppMode) {
         if (mode == _uiState.value.currentMode) return
-        val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", 0)
+        val defaultSound = if (mode == AppMode.WOODEN_FISH) 1 else 0
+        val savedSoundIndex = prefs.getInt("key_sound_${mode.id}", defaultSound)
         val newSubtitle = mode.defaultSubtitle
 
         if (mode != AppMode.POMODORO) {
@@ -269,6 +276,17 @@ open class MainViewModel(
         }
     }
 
+    fun playTimerFinishedNotification() {
+        viewModelScope.launch {
+            for (i in 0 until 3) {
+                audioPlayer.playTimerFinishedFeedback()
+                if (i < 2) {
+                    delay(1000L)
+                }
+            }
+        }
+    }
+
     private fun startTimerCountdown() {
         timerJob?.cancel()
         if (!_uiState.value.isTimerEnabled) return
@@ -288,7 +306,7 @@ open class MainViewModel(
                         timerRemainingSeconds = _uiState.value.timerDurationMinutes * 60L,
                         timerFinishedTrigger = System.currentTimeMillis()
                     )
-                    audioPlayer.playTimerFinishedFeedback()
+                    playTimerFinishedNotification()
                     toggleAutoKnock(false)
                     break
                 } else {
@@ -386,7 +404,7 @@ open class MainViewModel(
                     val allStages = _uiState.value.pomodoroStages
                     if (nextStageIdx < allStages.size) {
                         if (_uiState.value.isPomodoroSoundEnabled) {
-                            audioPlayer.playTimerFinishedFeedback()
+                            playTimerFinishedNotification()
                         }
                         _uiState.value = _uiState.value.copy(
                             currentPomodoroStageIndex = nextStageIdx,
@@ -395,7 +413,7 @@ open class MainViewModel(
                         )
                     } else {
                         if (_uiState.value.isPomodoroSoundEnabled) {
-                            audioPlayer.playTimerFinishedFeedback()
+                            playTimerFinishedNotification()
                         }
                         _uiState.value = _uiState.value.copy(
                             isPomodoroRunning = false,
@@ -438,13 +456,25 @@ open class MainViewModel(
         )
     }
 
+    fun restartPomodoro() {
+        pomodoroJob?.cancel()
+        val stages = _uiState.value.pomodoroStages
+        val firstStage = stages.firstOrNull() ?: 25
+        _uiState.value = _uiState.value.copy(
+            isPomodoroRunning = true,
+            currentPomodoroStageIndex = 0,
+            pomodoroRemainingSeconds = firstStage * 60L
+        )
+        runPomodoroTicker()
+    }
+
     fun togglePomodoroSound() {
         val next = !_uiState.value.isPomodoroSoundEnabled
         _uiState.value = _uiState.value.copy(isPomodoroSoundEnabled = next)
         prefs.putBoolean("key_pomodoro_sound_enabled", next)
     }
 
-    fun onPomodoroPresetClick(label: String, minutes: Int) {
+    fun onPomodoroPresetClick(label: String, stages: List<Int>) {
         val currentPreset = _uiState.value.pomodoroActivePreset
         if (currentPreset == label) {
             if (_uiState.value.isPomodoroRunning) {
@@ -453,12 +483,52 @@ open class MainViewModel(
                 if (_uiState.value.pomodoroRemainingSeconds > 0L) {
                     resumePomodoro()
                 } else {
-                    startPomodoro(label, listOf(minutes))
+                    startPomodoro(label, stages)
                 }
             }
         } else {
-            startPomodoro(label, listOf(minutes))
+            startPomodoro(label, stages)
         }
+    }
+
+    // -------------------------------------------------------------
+    // 节奏模式 (木鱼/节拍器/电子鼓) 预设与自定义独立解耦控制体系
+    // -------------------------------------------------------------
+    fun onTempoPresetClick(label: String, presetBpm: Int) {
+        val currentPreset = _uiState.value.tempoActivePreset
+        if (currentPreset == label) {
+            toggleAutoKnock(!_uiState.value.isAutoKnockEnabled)
+        } else {
+            setBpm(presetBpm)
+            _uiState.value = _uiState.value.copy(tempoActivePreset = label)
+            prefs.putString("key_tempo_active_preset", label)
+            toggleAutoKnock(true)
+        }
+    }
+
+    fun onTempoCustomClick() {
+        val currentPreset = _uiState.value.tempoActivePreset
+        if (currentPreset == "自定义") {
+            toggleAutoKnock(!_uiState.value.isAutoKnockEnabled)
+        } else {
+            val customBpm = _uiState.value.customBpm
+            setBpm(customBpm)
+            _uiState.value = _uiState.value.copy(tempoActivePreset = "自定义")
+            prefs.putString("key_tempo_active_preset", "自定义")
+            toggleAutoKnock(true)
+        }
+    }
+
+    fun setCustomBpm(newBpm: Int) {
+        val safeBpm = newBpm.coerceIn(30, 300)
+        prefs.putInt("key_custom_bpm", safeBpm)
+        prefs.putString("key_tempo_active_preset", "自定义")
+        _uiState.value = _uiState.value.copy(
+            customBpm = safeBpm,
+            tempoActivePreset = "自定义"
+        )
+        setBpm(safeBpm)
+        toggleAutoKnock(true)
     }
 
     fun togglePomodoro(presetLabel: String? = null, stages: List<Int>? = null) {

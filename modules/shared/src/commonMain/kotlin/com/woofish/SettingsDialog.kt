@@ -435,11 +435,6 @@ fun SettingsContent(
                                 inactiveTrackColor = Color(0xFF333333)
                             )
                         )
-                        Text(
-                            text = "默认 120ms，支持 0~500ms 自定义；满振幅强劲输出，手机置于桌面轻点亦有清脆震感",
-                            fontSize = 11.sp,
-                            color = Color.Gray
-                        )
                     }
 
                     // 5. 全屏敲击模式

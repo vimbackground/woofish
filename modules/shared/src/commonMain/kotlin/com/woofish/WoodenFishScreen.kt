@@ -231,31 +231,12 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 }
             }
 
-            // ▶ 右上角：【暂停/继续乒乓按钮】 + 【自动节奏/节拍器设置】 + 【清屏开关】 + 【软件设置】
+            // ▶ 右上角：【自动节奏/节拍器设置】 + 【清屏开关】 + 【软件设置】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 暂停/继续 乒乓按钮
-                val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
-                IconButton(
-                    onClick = {
-                        if (state.currentMode == AppMode.POMODORO) {
-                            if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
-                        } else {
-                            viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
-                        }
-                    },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Text(
-                        text = if (isRunning) "⏸" else "▶",
-                        fontSize = 18.sp,
-                        color = if (isRunning) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
-                    )
-                }
-
-                // 2. 自动节奏设置按钮
+                // 1. 自动节奏设置按钮
                 IconButton(
                     onClick = { viewModel.toggleAutoKnockDialog(true) },
                     modifier = Modifier.size(40.dp)
@@ -456,11 +437,11 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 letterSpacing = 4.sp,
                 modifier = Modifier.align(Alignment.Center)
             )
-        } else {
+            val isWoodenFish = state.currentMode == AppMode.WOODEN_FISH
             val instrumentSize = if (state.isZenMode) {
-                if (isLandscape) 250.dp else 240.dp
+                if (isLandscape) 250.dp else if (isWoodenFish) 180.dp else 240.dp
             } else {
-                if (isLandscape) 240.dp else 240.dp
+                if (isLandscape) 240.dp else if (isWoodenFish) 180.dp else 240.dp
             }
             Box(
                 modifier = Modifier
@@ -541,14 +522,89 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         // -------------------------------------------------------------
         var showPomodoroCustomDialog by remember { mutableStateOf(false) }
         var showQuickCustomBpmDialog by remember { mutableStateOf(false) }
-        var quickCustomBpmText by remember { mutableStateOf(state.bpm.toString()) }
+        var quickCustomBpmText by remember { mutableStateOf(state.customBpm.toString()) }
+
+        val pomodoroPresets = remember {
+            listOf(
+                "2分钟" to listOf(2),
+                "5分钟" to listOf(5),
+                "10分钟" to listOf(10),
+                "25+5分钟" to listOf(25, 5),
+                "50+10分钟" to listOf(50, 10)
+            )
+        }
+        val pomodoroTopPresets = remember { pomodoroPresets.take(3) }
+        val pomodoroBottomPresets = remember { pomodoroPresets.drop(3) }
 
         val tempoPresets = remember(state.currentMode) {
             state.currentMode.getTempoPresets()
         }
-        val topRowPresets = tempoPresets.take(3)
-        val bottomRowPresets = tempoPresets.drop(3)
-        val isCustomBpm = state.bpm !in listOf(30, 60, 90, 120, 150)
+        val topRowPresets = remember(tempoPresets) { tempoPresets.take(3) }
+        val bottomRowPresets = remember(tempoPresets) { tempoPresets.drop(3) }
+
+        // -------------------------------------------------------------
+        // 清屏模式专属：屏幕下方中间低干扰"暂停/继续"按钮
+        // 短按暂停/继续 乒乓切换，长按重新开始计时
+        // -------------------------------------------------------------
+        AnimatedVisibility(
+            visible = state.isZenMode,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = if (isLandscape) 20.dp else 32.dp)
+        ) {
+            val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0x33000000),
+                border = BorderStroke(1.dp, if (isRunning) Color(0x66FFD54F) else Color(0x33FFFFFF)),
+                modifier = Modifier
+                    .pointerInput(isRunning, state.currentMode) {
+                        detectTapGestures(
+                            onTap = {
+                                if (state.currentMode == AppMode.POMODORO) {
+                                    if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
+                                } else {
+                                    viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
+                                }
+                            },
+                            onLongPress = {
+                                if (state.currentMode == AppMode.POMODORO) {
+                                    viewModel.restartPomodoro()
+                                } else {
+                                    if (state.isTimerEnabled) {
+                                        viewModel.resetTimer()
+                                    }
+                                    viewModel.toggleAutoKnock(true)
+                                }
+                                if (state.vibrationMs > 0) {
+                                    viewModel.audioPlayer.vibrateManualKnock(40)
+                                }
+                            }
+                        )
+                    }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = if (isRunning) "⏸" else "▶",
+                        fontSize = 13.sp,
+                        color = if (isRunning) Color(0xCCFFD54F) else Color(0x88CCCCCC)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isRunning) "暂停" else "继续",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isRunning) Color(0xCCFFD54F) else Color(0x88CCCCCC)
+                    )
+                }
+            }
+        }
 
         AnimatedVisibility(
             visible = !state.isZenMode,
@@ -570,14 +626,12 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (state.currentMode == AppMode.POMODORO) {
-                        val pomodoroPresets = listOf(2, 5, 10, 15, 25)
-                        pomodoroPresets.forEach { minutes ->
-                            val label = "${minutes}分"
+                        pomodoroPresets.forEach { (label, stages) ->
                             val isSelected = state.pomodoroActivePreset == label
                             val isRunning = isSelected && state.isPomodoroRunning
                             Surface(
                                 onClick = {
-                                    viewModel.onPomodoroPresetClick(label, minutes)
+                                    viewModel.onPomodoroPresetClick(label, stages)
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
@@ -596,26 +650,18 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     Text(
                                         text = if (isRunning) "⏸ $label" else label,
                                         color = if (isSelected) Color(0xFFFFD54F) else Color.White,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        fontSize = 12.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1
                                     )
                                 }
                             }
                         }
 
-                        // 自定义
+                        // 自定义 (长按进入配置，短按暂停/继续)
                         val isCustomSelected = state.pomodoroActivePreset == "自定义"
                         val isCustomRunning = isCustomSelected && state.isPomodoroRunning
                         Surface(
-                            onClick = {
-                                if (isCustomRunning) {
-                                    viewModel.pausePomodoro()
-                                } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
-                                    viewModel.resumePomodoro()
-                                } else {
-                                    showPomodoroCustomDialog = true
-                                }
-                            },
                             shape = RoundedCornerShape(10.dp),
                             color = if (isCustomSelected) Color(0x33FFD54F) else Color.Transparent,
                             border = BorderStroke(
@@ -625,6 +671,24 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             modifier = Modifier
                                 .weight(1f)
                                 .height(46.dp)
+                                .pointerInput(isCustomSelected, isCustomRunning) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            if (isCustomRunning) {
+                                                viewModel.pausePomodoro()
+                                            } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
+                                                viewModel.resumePomodoro()
+                                            } else {
+                                                val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
+                                                viewModel.startPomodoro("自定义", stages)
+                                            }
+                                        },
+                                        onLongPress = {
+                                            showPomodoroCustomDialog = true
+                                            if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
+                                        }
+                                    )
+                                }
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -638,24 +702,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 Text(
                                     text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
                                     color = if (isCustomSelected) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 13.5.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
                                     maxLines = 1
                                 )
                             }
                         }
                     } else {
-                        // 常规模式 6 档 (来自 state.currentMode.getTempoPresets())
+                        // 常规模式 5 个预设 (来自 state.currentMode.getTempoPresets())
                         tempoPresets.forEach { (label, value) ->
-                            val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                            val isSelected = state.tempoActivePreset == label
+                            val isPlayingThis = isSelected && state.isAutoKnockEnabled
                             Surface(
                                 onClick = {
-                                    if (isPlayingThis) {
-                                        viewModel.toggleAutoKnock(false)
-                                    } else {
-                                        viewModel.setBpm(value)
-                                        viewModel.toggleAutoKnock(true)
-                                    }
+                                    viewModel.onTempoPresetClick(label, value)
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
@@ -674,23 +734,18 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     Text(
                                         text = if (isPlayingThis) "⏸ $label" else label,
                                         color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1
                                     )
                                 }
                             }
                         }
 
-                        val isPlayingCustom = state.isAutoKnockEnabled && isCustomBpm
+                        // 自定义 BPM (长按进入配置，短按暂停/继续)
+                        val isCustomSelected = state.tempoActivePreset == "自定义"
+                        val isPlayingCustom = isCustomSelected && state.isAutoKnockEnabled
                         Surface(
-                            onClick = {
-                                if (isPlayingCustom) {
-                                    viewModel.toggleAutoKnock(false)
-                                } else {
-                                    quickCustomBpmText = state.bpm.toString()
-                                    showQuickCustomBpmDialog = true
-                                }
-                            },
                             shape = RoundedCornerShape(10.dp),
                             color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
                             border = BorderStroke(
@@ -700,17 +755,30 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             modifier = Modifier
                                 .weight(1f)
                                 .height(46.dp)
+                                .pointerInput(isCustomSelected, isPlayingCustom, state.customBpm) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            viewModel.onTempoCustomClick()
+                                        },
+                                        onLongPress = {
+                                            quickCustomBpmText = state.customBpm.toString()
+                                            showQuickCustomBpmDialog = true
+                                            if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
+                                        }
+                                    )
+                                }
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                val customText = if (isCustomBpm) "自定义 ${state.bpm}" else "自定义 ✍️"
+                                val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
                                 Text(
                                     text = if (isPlayingCustom) "⏸ $customText" else customText,
                                     color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
-                                    fontSize = 13.5.sp,
-                                    fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -723,20 +791,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (state.currentMode == AppMode.POMODORO) {
-                        val pomodoroTopPresets = listOf(2, 5, 10)
-                        val pomodoroBottomPresets = listOf(15, 25)
-
+                        // 上排 3 个预设：2分钟，5分钟，10分钟
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            pomodoroTopPresets.forEach { minutes ->
-                                val label = "${minutes}分"
+                            pomodoroTopPresets.forEach { (label, stages) ->
                                 val isSelected = state.pomodoroActivePreset == label
                                 val isRunning = isSelected && state.isPomodoroRunning
                                 Surface(
                                     onClick = {
-                                        viewModel.onPomodoroPresetClick(label, minutes)
+                                        viewModel.onPomodoroPresetClick(label, stages)
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
@@ -755,25 +820,26 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         Text(
                                             text = if (isRunning) "⏸ $label" else label,
                                             color = if (isSelected) Color(0xFFFFD54F) else Color.White,
-                                            fontSize = 13.5.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
                                         )
                                     }
                                 }
                             }
                         }
 
+                        // 下排：25+5分钟，50+10分钟，自定义
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            pomodoroBottomPresets.forEach { minutes ->
-                                val label = "${minutes}分"
+                            pomodoroBottomPresets.forEach { (label, stages) ->
                                 val isSelected = state.pomodoroActivePreset == label
                                 val isRunning = isSelected && state.isPomodoroRunning
                                 Surface(
                                     onClick = {
-                                        viewModel.onPomodoroPresetClick(label, minutes)
+                                        viewModel.onPomodoroPresetClick(label, stages)
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
@@ -792,25 +858,18 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         Text(
                                             text = if (isRunning) "⏸ $label" else label,
                                             color = if (isSelected) Color(0xFFFFD54F) else Color.White,
-                                            fontSize = 13.5.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
                                         )
                                     }
                                 }
                             }
 
+                            // 自定义按钮
                             val isCustomSelected = state.pomodoroActivePreset == "自定义"
                             val isCustomRunning = isCustomSelected && state.isPomodoroRunning
                             Surface(
-                                onClick = {
-                                    if (isCustomRunning) {
-                                        viewModel.pausePomodoro()
-                                    } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
-                                        viewModel.resumePomodoro()
-                                    } else {
-                                        showPomodoroCustomDialog = true
-                                    }
-                                },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isCustomSelected) Color(0x33FFD54F) else Color.Transparent,
                                 border = BorderStroke(
@@ -820,6 +879,24 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
+                                    .pointerInput(isCustomSelected, isCustomRunning) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                if (isCustomRunning) {
+                                                    viewModel.pausePomodoro()
+                                                } else if (isCustomSelected && state.pomodoroRemainingSeconds > 0L) {
+                                                    viewModel.resumePomodoro()
+                                                } else {
+                                                    val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
+                                                    viewModel.startPomodoro("自定义", stages)
+                                                }
+                                            },
+                                            onLongPress = {
+                                                showPomodoroCustomDialog = true
+                                                if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
+                                            }
+                                        )
+                                    }
                             ) {
                                 Box(
                                     contentAlignment = Alignment.Center,
@@ -833,7 +910,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     Text(
                                         text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
                                         color = if (isCustomSelected) Color(0xFFFFD54F) else Color.White,
-                                        fontSize = 13.5.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1
                                     )
@@ -841,20 +918,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             }
                         }
                     } else {
+                        // 常规模式上排 3 个预设
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             topRowPresets.forEach { (label, value) ->
-                                val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                                val isSelected = state.tempoActivePreset == label
+                                val isPlayingThis = isSelected && state.isAutoKnockEnabled
                                 Surface(
                                     onClick = {
-                                        if (isPlayingThis) {
-                                            viewModel.toggleAutoKnock(false)
-                                        } else {
-                                            viewModel.setBpm(value)
-                                            viewModel.toggleAutoKnock(true)
-                                        }
+                                        viewModel.onTempoPresetClick(label, value)
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
@@ -874,27 +948,25 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                             text = if (isPlayingThis) "⏸ $label" else label,
                                             color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
                                             fontSize = 13.5.sp,
-                                            fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
+                                            fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
                                         )
                                     }
                                 }
                             }
                         }
 
+                        // 常规模式下排 2 个预设 + 自定义
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             bottomRowPresets.forEach { (label, value) ->
-                                val isPlayingThis = state.isAutoKnockEnabled && state.bpm == value
+                                val isSelected = state.tempoActivePreset == label
+                                val isPlayingThis = isSelected && state.isAutoKnockEnabled
                                 Surface(
                                     onClick = {
-                                        if (isPlayingThis) {
-                                            viewModel.toggleAutoKnock(false)
-                                        } else {
-                                            viewModel.setBpm(value)
-                                            viewModel.toggleAutoKnock(true)
-                                        }
+                                        viewModel.onTempoPresetClick(label, value)
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
@@ -914,22 +986,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                             text = if (isPlayingThis) "⏸ $label" else label,
                                             color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
                                             fontSize = 13.5.sp,
-                                            fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium
+                                            fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
                                         )
                                     }
                                 }
                             }
 
-                            val isPlayingCustom = state.isAutoKnockEnabled && isCustomBpm
+                            // 自定义 BPM 按钮
+                            val isCustomSelected = state.tempoActivePreset == "自定义"
+                            val isPlayingCustom = isCustomSelected && state.isAutoKnockEnabled
                             Surface(
-                                onClick = {
-                                    if (isPlayingCustom) {
-                                        viewModel.toggleAutoKnock(false)
-                                    } else {
-                                        quickCustomBpmText = state.bpm.toString()
-                                        showQuickCustomBpmDialog = true
-                                    }
-                                },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
                                 border = BorderStroke(
@@ -939,17 +1006,30 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
+                                    .pointerInput(isCustomSelected, isPlayingCustom, state.customBpm) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                viewModel.onTempoCustomClick()
+                                            },
+                                            onLongPress = {
+                                                quickCustomBpmText = state.customBpm.toString()
+                                                showQuickCustomBpmDialog = true
+                                                if (state.vibrationMs > 0) viewModel.audioPlayer.vibrateManualKnock(30)
+                                            }
+                                        )
+                                    }
                             ) {
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    val customText = if (isCustomBpm) "自定义 ${state.bpm}" else "自定义 ✍️"
+                                    val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
                                     Text(
                                         text = if (isPlayingCustom) "⏸ $customText" else customText,
                                         color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1
                                     )
                                 }
                             }
@@ -1091,8 +1171,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     val parsed = quickCustomBpmText.toIntOrNull()?.coerceIn(30, 300) ?: tempBpm
-                                    viewModel.setBpm(parsed)
-                                    viewModel.toggleAutoKnock(true)
+                                    viewModel.setCustomBpm(parsed)
                                     showQuickCustomBpmDialog = false
                                 }
                             ),
@@ -1110,8 +1189,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     Button(
                         onClick = {
                             val parsed = quickCustomBpmText.toIntOrNull()?.coerceIn(30, 300) ?: tempBpm
-                            viewModel.setBpm(parsed)
-                            viewModel.toggleAutoKnock(true)
+                            viewModel.setCustomBpm(parsed)
                             showQuickCustomBpmDialog = false
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
