@@ -285,58 +285,7 @@ fun AutoKnockDialog(
                                 )
 
                                 Text(
-                                    text = "常用快捷模版：",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF888888)
-                                )
-
-                                val quickList = listOf(
-                                    "2分钟" to listOf(2),
-                                    "5分钟" to listOf(5),
-                                    "10分钟" to listOf(10),
-                                    "25+5分钟" to listOf(25, 5),
-                                    "50+10分钟" to listOf(50, 10),
-                                    "15+5" to listOf(15, 5),
-                                    "45+15" to listOf(45, 15)
-                                )
-                                val rows = quickList.chunked(3)
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    rows.forEach { rowItems ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            rowItems.forEach { (lbl, stages) ->
-                                                val isSelected = state.pomodoroActivePreset == lbl
-                                                Surface(
-                                                    onClick = {
-                                                        onPomodoroPresetClick(lbl, stages)
-                                                    },
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF1E1E1E),
-                                                    border = BorderStroke(1.dp, if (isSelected) Color.White else Color(0xFF444444)),
-                                                    modifier = Modifier.weight(1f)
-                                                ) {
-                                                    Box(
-                                                        contentAlignment = Alignment.Center,
-                                                        modifier = Modifier.padding(vertical = 8.dp)
-                                                    ) {
-                                                        Text(
-                                                            text = lbl,
-                                                            fontSize = 12.sp,
-                                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0),
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "自定义连续阶段（用 + 连接，如 15+5、25+5+10）：",
+                                    text = "输入阶段时长（用 + 连接，如 15+5、25+5+10）：",
                                     fontSize = 12.sp,
                                     color = Color(0xFF888888)
                                 )
@@ -376,12 +325,14 @@ fun AutoKnockDialog(
                                 Button(
                                     onClick = {
                                         onPomodoroCustomSeqChange(pomodoroCustomInput)
+                                        beatDetector.stop()
+                                        onDismiss()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                     shape = RoundedCornerShape(6.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(text = "应用并开始倒计时", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(text = "规划", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
                             }
                         }
@@ -793,51 +744,9 @@ fun AutoKnockDialog(
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
-                                val quickList = listOf(
-                                    "2分钟" to listOf(2),
-                                    "5分钟" to listOf(5),
-                                    "10分钟" to listOf(10),
-                                    "25+5分钟" to listOf(25, 5),
-                                    "50+10分钟" to listOf(50, 10),
-                                    "15+5" to listOf(15, 5)
-                                )
-                                val rows = quickList.chunked(3)
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    rows.forEach { rowItems ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            rowItems.forEach { (lbl, stages) ->
-                                                val isSelected = state.pomodoroActivePreset == lbl
-                                                Surface(
-                                                    onClick = {
-                                                        onPomodoroPresetClick(lbl, stages)
-                                                    },
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF1E1E1E),
-                                                    border = BorderStroke(1.dp, if (isSelected) Color.White else Color(0xFF444444)),
-                                                    modifier = Modifier.weight(1f)
-                                                ) {
-                                                    Box(
-                                                        contentAlignment = Alignment.Center,
-                                                        modifier = Modifier.padding(vertical = 8.dp)
-                                                    ) {
-                                                        Text(
-                                                            text = lbl,
-                                                            fontSize = 11.5.sp,
-                                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0),
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
 
                                 Text(
-                                    text = "自定义连续阶段（用 + 连接，如 15+5、25+5+10）：",
+                                    text = "输入阶段时长（用 + 连接，如 15+5、25+5+10）：",
                                     fontSize = 11.5.sp,
                                     color = Color(0xFF888888)
                                 )
@@ -877,12 +786,14 @@ fun AutoKnockDialog(
                                 Button(
                                     onClick = {
                                         onPomodoroCustomSeqChange(pomodoroCustomInput)
+                                        beatDetector.stop()
+                                        onDismiss()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                     shape = RoundedCornerShape(6.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(text = "应用此规划并开始", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+                                    Text(text = "规划", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
                                 }
                             }
                         }

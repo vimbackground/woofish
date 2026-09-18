@@ -383,13 +383,16 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     }
                 )
 
-                // win版/横屏下：数字下方文字不再页面中显示，只在标题栏显示
-                if (!isLandscape) {
+                // 番茄钟多阶段显示 或 竖屏常规副标题
+                if (!isLandscape || state.currentMode == AppMode.POMODORO) {
                     val subtitleText = if (state.currentMode == AppMode.POMODORO) {
                         val stageCount = state.pomodoroStages.size
                         val stageIdx = state.currentPomodoroStageIndex
                         val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
-                        if (stageCount > 1) {
+                        if (stageCount in 2..3) {
+                            val stagesDurationStr = state.pomodoroStages.joinToString(" + ") { "${it}分" }
+                            "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount ($stagesDurationStr)"
+                        } else if (stageCount > 3) {
                             "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount (${curStageMins}分)"
                         } else {
                             "${state.subtitle} (${curStageMins}分)"
@@ -401,9 +404,50 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     Text(
                         text = subtitleText,
                         color = Color(0xFF555555),
-                        fontSize = 18.sp,
+                        fontSize = if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) 16.sp else 18.sp,
                         fontWeight = FontWeight.Medium
                     )
+
+                    // 如果有多阶段，三阶段以内的，同时显示每阶段的时长标签，更清晰直观
+                    if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            state.pomodoroStages.forEachIndexed { index, minutes ->
+                                val isCurrent = index == state.currentPomodoroStageIndex
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isCurrent) Color(0x33FFFFFF) else Color(0x14FFFFFF),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isCurrent) Color.White else Color(0xFF3E3E3E)
+                                    )
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        if (isCurrent && state.isPomodoroRunning) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .background(Color.White, CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                        }
+                                        Text(
+                                            text = "阶段${index + 1}: ${minutes}分",
+                                            color = if (isCurrent) Color.White else Color(0xFF888888),
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // 状态胶囊指示器：按需求已移除番茄钟模式中间的"专注中/已暂停"胶囊，保持画面整洁
@@ -1466,57 +1510,6 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 )
                             }
                         }
-
-                        // 常用推荐模版快捷选择 (需求5：只保留 4+1, 6+2, 12+3, 15+5, 25+5, 45+15，需求4：点击直接开始倒计时)
-                        Text(
-                            text = "常用专注模版（点击直接开始倒计时）：",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                        val quickPresets = listOf(
-                            "4+1", "6+2", "12+3",
-                            "15+5", "25+5", "45+15"
-                        )
-                        val presetRows = quickPresets.chunked(3)
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            presetRows.forEach { rowItems ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    rowItems.forEach { preset ->
-                                        val isSelected = tempSeq == preset
-                                        Surface(
-                                            onClick = {
-                                                // 需求4：点击预设直接开始倒计时，不需要额外点击
-                                                tempSeq = preset
-                                                viewModel.setPomodoroCustomSequence(preset)
-                                                showPomodoroCustomDialog = false
-                                            },
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF1E1E1E),
-                                            border = BorderStroke(
-                                                1.dp,
-                                                if (isSelected) Color.White else Color(0xFF444444)
-                                            ),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier = Modifier.padding(vertical = 10.dp)
-                                            ) {
-                                                Text(
-                                                    text = preset,
-                                                    fontSize = 13.5.sp,
-                                                    color = if (isSelected) Color.White else Color(0xFFB0B0B0),
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 },
                 confirmButton = {
@@ -1527,7 +1520,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
-                        Text(text = "开始倒计时", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text(text = "规划", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
