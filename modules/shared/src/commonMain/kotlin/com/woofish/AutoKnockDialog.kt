@@ -1,6 +1,7 @@
 package com.woofish
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -100,7 +101,7 @@ fun AutoKnockDialog(
                         beatDetector.stop()
                         onDismiss()
                     }) {
-                        Text("← 返回", color = Color(0xFFFFD54F), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("← 返回", color = Color(0xFFB0B0B0), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(text = titleText, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
                 }
@@ -109,7 +110,7 @@ fun AutoKnockDialog(
                         beatDetector.stop()
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(text = "完成", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -145,15 +146,15 @@ fun AutoKnockDialog(
                                     "已暂停 · 当前 ${state.bpm} BPM"
                                 },
                                 fontSize = 12.sp,
-                                color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.Gray
+                                color = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
                             )
                         }
                         Switch(
                             checked = state.isAutoKnockEnabled,
                             onCheckedChange = onToggleAutoKnock,
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Color(0xFFFFD54F),
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
                                 uncheckedThumbColor = Color.Gray,
                                 uncheckedTrackColor = Color(0xFF333333)
                             )
@@ -182,7 +183,7 @@ fun AutoKnockDialog(
                                 },
                                 singleLine = true,
                                 textStyle = TextStyle(color = Color.White, fontSize = 13.5.sp),
-                                cursorBrush = SolidColor(Color(0xFFFFD54F)),
+                                cursorBrush = SolidColor(Color.White),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -199,14 +200,14 @@ fun AutoKnockDialog(
                                         onSubtitleChange(tag)
                                     },
                                     shape = RoundedCornerShape(6.dp),
-                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF262626),
-                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF262626),
+                                    border = if (isSelected) BorderStroke(1.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E))
                                 ) {
                                     Text(
                                         text = tag,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color.Gray,
+                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
                                 }
@@ -278,7 +279,7 @@ fun AutoKnockDialog(
                                         text = if (detectorState.isListening) "⏹️ 停止聆听" else "🎙️ 听音测速",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (detectorState.isListening) Color(0xFFFF8A80) else Color(0xFFFFD54F),
+                                        color = if (detectorState.isListening) Color(0xFFFF8A80) else Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }
@@ -308,7 +309,7 @@ fun AutoKnockDialog(
                                                     .weight(1f)
                                                     .height(barHeight.dp)
                                                     .clip(RoundedCornerShape(2.dp))
-                                                    .background(Color(0xFFFFD54F))
+                                                    .background(Color.White)
                                             )
                                         }
                                     }
@@ -318,7 +319,8 @@ fun AutoKnockDialog(
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(Color(0xFF2E2A1E), RoundedCornerShape(8.dp))
+                                                .background(Color(0xFF2E2E2E), RoundedCornerShape(8.dp))
+                                                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(8.dp))
                                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
@@ -328,19 +330,19 @@ fun AutoKnockDialog(
                                                     text = "$detected BPM",
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFFFD54F)
+                                                    color = Color.White
                                                 )
                                                 Text(
                                                     text = if (detectorState.confidence > 0.4f) "置信度: 优" else "置信度: 良好",
                                                     fontSize = 11.sp,
-                                                    color = Color.Gray
+                                                    color = Color(0xFF888888)
                                                 )
                                             }
 
                                             Surface(
                                                 onClick = { onBpmChange(detected) },
                                                 shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFFFFD54F)
+                                                color = Color.White
                                             ) {
                                                 Text(
                                                     text = "应用此速度",
@@ -363,7 +365,7 @@ fun AutoKnockDialog(
                                 Text(
                                     text = if (tapFeedbackBpm != null) "轻敲测得: ${tapFeedbackBpm} BPM" else "或跟随音乐节拍点击测速：",
                                     fontSize = 12.sp,
-                                    color = if (tapFeedbackBpm != null) Color(0xFFFFD54F) else Color.Gray
+                                    color = if (tapFeedbackBpm != null) Color.White else Color(0xFF888888)
                                 )
 
                                 Surface(
@@ -381,7 +383,7 @@ fun AutoKnockDialog(
                                         text = "🖐️ 点击测速",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
+                                        color = Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }
@@ -431,15 +433,15 @@ fun AutoKnockDialog(
                                     "已暂停 · 当前 ${state.bpm} BPM"
                                 },
                                 fontSize = 12.sp,
-                                color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.Gray
+                                color = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
                             )
                         }
                         Switch(
                             checked = state.isAutoKnockEnabled,
                             onCheckedChange = onToggleAutoKnock,
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Color(0xFFFFD54F),
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
                                 uncheckedThumbColor = Color.Gray,
                                 uncheckedTrackColor = Color(0xFF333333)
                             )
@@ -468,7 +470,7 @@ fun AutoKnockDialog(
                                 },
                                 singleLine = true,
                                 textStyle = TextStyle(color = Color.White, fontSize = 13.5.sp),
-                                cursorBrush = SolidColor(Color(0xFFFFD54F)),
+                                cursorBrush = SolidColor(Color.White),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -485,14 +487,14 @@ fun AutoKnockDialog(
                                         onSubtitleChange(tag)
                                     },
                                     shape = RoundedCornerShape(6.dp),
-                                    color = if (isSelected) Color(0xFF3A301D) else Color(0xFF262626),
-                                    border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF262626),
+                                    border = if (isSelected) BorderStroke(1.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E))
                                 ) {
                                     Text(
                                         text = tag,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color.Gray,
+                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
                                 }
@@ -560,7 +562,7 @@ fun AutoKnockDialog(
                                         text = if (detectorState.isListening) "⏹️ 停止聆听" else "🎙️ 听音测速",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (detectorState.isListening) Color(0xFFFF8A80) else Color(0xFFFFD54F),
+                                        color = if (detectorState.isListening) Color(0xFFFF8A80) else Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }
@@ -592,7 +594,7 @@ fun AutoKnockDialog(
                                                     .weight(1f)
                                                     .height(barHeight.dp)
                                                     .clip(RoundedCornerShape(2.dp))
-                                                    .background(Color(0xFFFFD54F))
+                                                    .background(Color.White)
                                             )
                                         }
                                     }
@@ -603,7 +605,8 @@ fun AutoKnockDialog(
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(Color(0xFF2E2A1E), RoundedCornerShape(8.dp))
+                                                .background(Color(0xFF2E2E2E), RoundedCornerShape(8.dp))
+                                                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(8.dp))
                                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
@@ -613,12 +616,12 @@ fun AutoKnockDialog(
                                                     text = "$detected BPM",
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFFFD54F)
+                                                    color = Color.White
                                                 )
                                                 Text(
                                                     text = if (detectorState.confidence > 0.4f) "置信度: 优" else "置信度: 良好",
                                                     fontSize = 11.sp,
-                                                    color = Color.Gray
+                                                    color = Color(0xFF888888)
                                                 )
                                             }
 
@@ -629,7 +632,7 @@ fun AutoKnockDialog(
                                                 Surface(
                                                     onClick = { onBpmChange(detected) },
                                                     shape = RoundedCornerShape(6.dp),
-                                                    color = Color(0xFFFFD54F)
+                                                    color = Color.White
                                                 ) {
                                                     Text(
                                                         text = "应用此速度",
@@ -654,7 +657,7 @@ fun AutoKnockDialog(
                                 Text(
                                     text = if (tapFeedbackBpm != null) "轻敲测得: ${tapFeedbackBpm} BPM" else "或跟随音乐节拍点击测速：",
                                     fontSize = 12.sp,
-                                    color = if (tapFeedbackBpm != null) Color(0xFFFFD54F) else Color.Gray
+                                    color = if (tapFeedbackBpm != null) Color.White else Color(0xFF888888)
                                 )
 
                                 Surface(
@@ -672,7 +675,7 @@ fun AutoKnockDialog(
                                         text = "🖐️ 点击测速",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
+                                        color = Color(0xFFB0B0B0),
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }

@@ -1,5 +1,6 @@
 package com.woofish
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,13 +56,13 @@ fun SettingsContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("← 返回", color = Color(0xFFFFD54F), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("← 返回", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(text = "软件设置", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
                 }
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(text = "完成", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -96,8 +97,8 @@ fun SettingsContent(
                                     Surface(
                                         onClick = { onModeChange(mode) },
                                         shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                        border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                        color = if (isSelected) Color(0x26FFFFFF) else Color(0xFF282828),
+                                        border = if (isSelected) BorderStroke(1.2.dp, Color.White) else null,
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Box(
@@ -108,7 +109,7 @@ fun SettingsContent(
                                                 text = mode.displayName.replace("模式", ""),
                                                 fontSize = 13.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
                                             )
                                         }
                                     }
@@ -129,7 +130,7 @@ fun SettingsContent(
                                 text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (state.vibrationMs == 0) Color.Gray else Color(0xFFFFD54F)
+                                color = if (state.vibrationMs == 0) Color.Gray else Color.White
                             )
                         }
                         Slider(
@@ -138,8 +139,8 @@ fun SettingsContent(
                             valueRange = 0f..500f,
                             steps = 499,
                             colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFFFFD54F),
-                                activeTrackColor = Color(0xFFFFD54F),
+                                thumbColor = Color.White,
+                                activeTrackColor = Color.White,
                                 inactiveTrackColor = Color(0xFF333333)
                             )
                         )
@@ -234,7 +235,7 @@ fun SettingsContent(
                                 "未设置（可自选任意音频循环播放）"
                             },
                             fontSize = 12.sp,
-                            color = if (state.customBgmUri != null) Color(0xFFFFD54F) else Color.Gray,
+                            color = if (state.customBgmUri != null) Color.White else Color.Gray,
                             maxLines = 1
                         )
 
@@ -283,7 +284,7 @@ fun SettingsContent(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(text = "💖 随喜赞助", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             Text(text = "若正念木鱼对您有所助益，欢迎自愿赞助支持持续维护更新", fontSize = 11.5.sp, color = Color.Gray, lineHeight = 16.sp)
-                            Text(text = "微信扫一扫 · 感恩有您 🙏", fontSize = 11.sp, color = Color(0xFFFFD54F))
+                            Text(text = "微信扫一扫 · 感恩有您 🙏", fontSize = 11.sp, color = Color.LightGray)
                         }
                     }
                 }
@@ -321,8 +322,8 @@ fun SettingsContent(
                                     Surface(
                                         onClick = { onModeChange(mode) },
                                         shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0xFF3A301D) else Color(0xFF282828),
-                                        border = if (isSelected) ButtonDefaults.outlinedButtonBorder else null,
+                                        color = if (isSelected) Color(0x26FFFFFF) else Color(0xFF282828),
+                                        border = if (isSelected) BorderStroke(1.2.dp, Color.White) else null,
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Box(
@@ -333,7 +334,7 @@ fun SettingsContent(
                                                 text = mode.displayName.replace("模式", ""),
                                                 fontSize = 13.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color(0xFFFFD54F) else Color(0xFFCCCCCC)
+                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
                                             )
                                         }
                                     }
@@ -384,7 +385,7 @@ fun SettingsContent(
                                 "未设置（可自选手机内任意音频循环播放）"
                             },
                             fontSize = 12.sp,
-                            color = if (state.customBgmUri != null) Color(0xFFFFD54F) else Color.Gray,
+                            color = if (state.customBgmUri != null) Color.White else Color.Gray,
                             maxLines = 1
                         )
                     }
@@ -421,7 +422,7 @@ fun SettingsContent(
                                 text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (state.vibrationMs == 0) Color.Gray else Color(0xFFFFD54F)
+                                color = if (state.vibrationMs == 0) Color.Gray else Color.White
                             )
                         }
                         Slider(
@@ -430,8 +431,8 @@ fun SettingsContent(
                             valueRange = 0f..500f,
                             steps = 499,
                             colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFFFFD54F),
-                                activeTrackColor = Color(0xFFFFD54F),
+                                thumbColor = Color.White,
+                                activeTrackColor = Color.White,
                                 inactiveTrackColor = Color(0xFF333333)
                             )
                         )
@@ -525,7 +526,7 @@ fun SettingsContent(
                         Text(
                             text = "微信扫一扫 · 随喜随缘 · 感恩有您 🙏",
                             fontSize = 11.5.sp,
-                            color = Color(0xFFFFD54F),
+                            color = Color.LightGray,
                             textAlign = TextAlign.Center
                         )
                     }

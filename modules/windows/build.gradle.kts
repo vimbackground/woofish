@@ -24,7 +24,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.AppImage)
             packageName = "woofish"
-            packageVersion = "1.2.0"
+            packageVersion = "1.2.1"
             description = "woofish - mindfulness wooden fish and rhythm"
             copyright = "Copyright (c) 2026 woofish"
             modules("java.base", "java.desktop", "java.logging", "jdk.unsupported")

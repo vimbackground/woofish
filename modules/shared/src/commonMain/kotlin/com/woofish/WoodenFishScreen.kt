@@ -174,9 +174,9 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         painter = painterResource(Res.drawable.ic_music_note),
                         contentDescription = if (state.customBgmUri == null) "选择本地背景音乐" else "背景音乐开关",
                         tint = when {
-                            state.isBgmPlaying -> Color(0xFFFFD54F)
-                            state.customBgmUri != null -> Color.White
-                            else -> Color(0xFF555555)
+                            state.isBgmPlaying -> Color.White
+                            state.customBgmUri != null -> Color(0xFFB0B0B0)
+                            else -> Color(0xFF888888)
                         }
                     )
                 }
@@ -190,7 +190,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         painter = painterResource(if (state.isAnimationEnabled) Res.drawable.ic_auto_awesome else Res.drawable.ic_auto_awesome_outline
                         ),
                         contentDescription = "动效开关",
-                        tint = if (state.isAnimationEnabled) Color(0xFFFFD54F) else Color(0xFF555555)
+                        tint = if (state.isAnimationEnabled) Color.White else Color(0xFF888888)
                     )
                 }
 
@@ -200,13 +200,13 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     Surface(
                         onClick = { viewModel.togglePomodoroSound() },
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isSoundOn) Color(0xFF332B1A) else Color(0xFF222222),
-                        border = if (isSoundOn) BorderStroke(1.dp, Color(0x88FFD54F)) else null,
+                        color = if (isSoundOn) Color(0x33FFFFFF) else Color(0xFF222222),
+                        border = if (isSoundOn) BorderStroke(1.dp, Color.White) else null,
                         tonalElevation = 2.dp
                     ) {
                         Text(
                             text = if (isSoundOn) "🔊 滴答音" else "🔇 静音",
-                            color = if (isSoundOn) Color(0xFFFFD54F) else Color(0xFF888888),
+                            color = if (isSoundOn) Color.White else Color(0xFF888888),
                             fontSize = 13.sp,
                             fontWeight = if (isSoundOn) FontWeight.SemiBold else FontWeight.Normal,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -223,7 +223,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     ) {
                         Text(
                             text = "🔊 $currentSoundName",
-                            color = Color(0xFFCCCCCC),
+                            color = Color(0xFFB0B0B0),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -246,7 +246,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         painter = painterResource(if (state.isAutoKnockEnabled) Res.drawable.ic_timer else Res.drawable.ic_timer_outline
                         ),
                         contentDescription = "自动节奏设置",
-                        tint = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color(0xFF999999)
+                        tint = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
                     )
                 }
 
@@ -259,7 +259,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         painter = painterResource(if (state.isZenMode) Res.drawable.ic_visibility else Res.drawable.ic_visibility_off
                         ),
                         contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
-                        tint = if (state.isZenMode) Color(0xFFFFD54F) else Color(0xFF999999)
+                        tint = if (state.isZenMode) Color.White else Color(0xFF888888)
                     )
                 }
 
@@ -271,7 +271,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     Icon(
                         painter = painterResource(Res.drawable.ic_settings),
                         contentDescription = "软件设置",
-                        tint = Color(0xFF999999)
+                        tint = Color(0xFF888888)
                     )
                 }
             }
@@ -368,15 +368,15 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     Surface(
                         onClick = { viewModel.toggleAutoKnockDialog(true) },
                         shape = RoundedCornerShape(14.dp),
-                        color = if (state.isAutoKnockEnabled) Color(0x33FFD54F) else Color(0xFF222222),
+                        color = if (state.isAutoKnockEnabled) Color(0x33FFFFFF) else Color(0xFF222222),
                         border = BorderStroke(
                             1.dp,
-                            if (state.isAutoKnockEnabled) Color(0x88FFD54F) else Color(0xFF444444)
+                            if (state.isAutoKnockEnabled) Color.White else Color(0xFF444444)
                         )
                     ) {
                         Text(
                             text = if (state.isAutoKnockEnabled) "⏱️ 倒计时 $timeStr" else "⏱️ 定时 $timeStr (待开始)",
-                            color = if (state.isAutoKnockEnabled) Color(0xFFFFD54F) else Color.LightGray,
+                            color = if (state.isAutoKnockEnabled) Color.White else Color(0xFFB0B0B0),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
@@ -403,7 +403,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             viewModel.resetCount()
                             showResetConfirmDialog = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
                         Text(text = "清零", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
@@ -450,11 +450,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 )
             }
         } else {
-            val isWoodenFish = state.currentMode == AppMode.WOODEN_FISH
             val instrumentSize = if (state.isZenMode) {
-                if (isLandscape) 250.dp else if (isWoodenFish) 180.dp else 240.dp
+                if (isLandscape) 250.dp else 240.dp
             } else {
-                if (isLandscape) 240.dp else if (isWoodenFish) 180.dp else 240.dp
+                if (isLandscape) 240.dp else 240.dp
             }
             Box(
                 modifier = Modifier
@@ -565,13 +564,13 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             exit = fadeOut(tween(200)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (isLandscape) 40.dp else 64.dp)
+                .padding(bottom = if (isLandscape) 60.dp else 92.dp)
         ) {
             val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
             Surface(
                 shape = CircleShape,
-                color = Color(0x44000000),
-                border = BorderStroke(1.5.dp, if (isRunning) Color(0xAAFFD54F) else Color(0x55FFFFFF)),
+                color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
+                border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
                 modifier = Modifier
                     .pointerInput(isRunning, state.currentMode) {
                         detectTapGestures(
@@ -601,19 +600,19 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 26.dp, vertical = 11.dp)
+                    modifier = Modifier.padding(horizontal = 36.dp, vertical = 14.dp)
                 ) {
                     Text(
                         text = if (isRunning) "⏸" else "▶",
-                        fontSize = 16.sp,
-                        color = if (isRunning) Color(0xFFFFD54F) else Color(0xFFDDDDDD)
+                        fontSize = 19.sp,
+                        color = if (isRunning) Color.White else Color(0xFFB0B0B0)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = if (isRunning) "暂停" else "继续",
-                        fontSize = 14.5.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isRunning) Color(0xFFFFD54F) else Color(0xFFDDDDDD)
+                        color = if (isRunning) Color.White else Color(0xFFB0B0B0)
                     )
                 }
             }
@@ -647,10 +646,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     viewModel.onPomodoroPresetClick(label, stages)
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
+                                color = if (isSelected) Color(0x26FFFFFF) else Color.Transparent,
                                 border = BorderStroke(
                                     width = 1.2.dp,
-                                    color = if (isSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                    color = if (isSelected) Color.White else Color(0xFF555555)
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -662,7 +661,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 ) {
                                     Text(
                                         text = if (isRunning) "⏸ $label" else label,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 12.5.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1
@@ -676,10 +675,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         val isCustomRunning = isCustomSelected && state.isPomodoroRunning
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isCustomSelected) Color(0x33FFD54F) else Color.Transparent,
+                            color = if (isCustomSelected) Color(0x26FFFFFF) else Color.Transparent,
                             border = BorderStroke(
                                 width = 1.2.dp,
-                                color = if (isCustomSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                color = if (isCustomSelected) Color.White else Color(0xFF555555)
                             ),
                             modifier = Modifier
                                 .weight(1f)
@@ -721,7 +720,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 }
                                 Text(
                                     text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
-                                    color = if (isCustomSelected) Color(0xFFFFD54F) else Color.White,
+                                    color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
                                     fontSize = 12.5.sp,
                                     fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
                                     maxLines = 1
@@ -738,10 +737,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     viewModel.onTempoPresetClick(label, value)
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
+                                color = if (isPlayingThis) Color(0x26FFFFFF) else Color.Transparent,
                                 border = BorderStroke(
                                     width = 1.2.dp,
-                                    color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
+                                    color = if (isPlayingThis) Color.White else Color(0xFF555555)
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -753,7 +752,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 ) {
                                     Text(
                                         text = if (isPlayingThis) "⏸ $label" else label,
-                                        color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                        color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 13.sp,
                                         fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1
@@ -767,10 +766,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         val isPlayingCustom = isCustomSelected && state.isAutoKnockEnabled
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
+                            color = if (isPlayingCustom) Color(0x26FFFFFF) else Color.Transparent,
                             border = BorderStroke(
                                 width = 1.2.dp,
-                                color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
+                                color = if (isPlayingCustom) Color.White else Color(0xFF555555)
                             ),
                             modifier = Modifier
                                 .weight(1f)
@@ -803,7 +802,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
                                 Text(
                                     text = if (isPlayingCustom) "⏸ $customText" else customText,
-                                    color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
+                                    color = if (isPlayingCustom) Color.White else Color(0xFFB0B0B0),
                                     fontSize = 13.sp,
                                     fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
                                     maxLines = 1
@@ -832,10 +831,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         viewModel.onPomodoroPresetClick(label, stages)
                                     },
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
+                                    color = if (isSelected) Color(0x26FFFFFF) else Color.Transparent,
                                     border = BorderStroke(
                                         width = 1.2.dp,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                        color = if (isSelected) Color.White else Color(0xFF555555)
                                     ),
                                     modifier = Modifier
                                         .weight(1f)
@@ -847,7 +846,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     ) {
                                         Text(
                                             text = if (isRunning) "⏸ $label" else label,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             maxLines = 1
@@ -870,10 +869,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         viewModel.onPomodoroPresetClick(label, stages)
                                     },
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) Color(0x33FFD54F) else Color.Transparent,
+                                    color = if (isSelected) Color(0x26FFFFFF) else Color.Transparent,
                                     border = BorderStroke(
                                         width = 1.2.dp,
-                                        color = if (isSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                        color = if (isSelected) Color.White else Color(0xFF555555)
                                     ),
                                     modifier = Modifier
                                         .weight(1f)
@@ -885,7 +884,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     ) {
                                         Text(
                                             text = if (isRunning) "⏸ $label" else label,
-                                            color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             maxLines = 1
@@ -899,10 +898,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             val isCustomRunning = isCustomSelected && state.isPomodoroRunning
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isCustomSelected) Color(0x33FFD54F) else Color.Transparent,
+                                color = if (isCustomSelected) Color(0x26FFFFFF) else Color.Transparent,
                                 border = BorderStroke(
                                     width = 1.2.dp,
-                                    color = if (isCustomSelected) Color(0xFFFFD54F) else Color(0xFF555555)
+                                    color = if (isCustomSelected) Color.White else Color(0xFF555555)
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -944,7 +943,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     }
                                     Text(
                                         text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
-                                        color = if (isCustomSelected) Color(0xFFFFD54F) else Color.White,
+                                        color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 12.sp,
                                         fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1
@@ -966,10 +965,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         viewModel.onTempoPresetClick(label, value)
                                     },
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
+                                    color = if (isPlayingThis) Color(0x26FFFFFF) else Color.Transparent,
                                     border = BorderStroke(
                                         width = 1.2.dp,
-                                        color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
+                                        color = if (isPlayingThis) Color.White else Color(0xFF555555)
                                     ),
                                     modifier = Modifier
                                         .weight(1f)
@@ -981,7 +980,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     ) {
                                         Text(
                                             text = if (isPlayingThis) "⏸ $label" else label,
-                                            color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                            color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.5.sp,
                                             fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
                                             maxLines = 1
@@ -1004,10 +1003,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         viewModel.onTempoPresetClick(label, value)
                                     },
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isPlayingThis) Color(0x33FFD54F) else Color.Transparent,
+                                    color = if (isPlayingThis) Color(0x26FFFFFF) else Color.Transparent,
                                     border = BorderStroke(
                                         width = 1.2.dp,
-                                        color = if (isPlayingThis) Color(0xFFFFD54F) else Color(0xFF555555)
+                                        color = if (isPlayingThis) Color.White else Color(0xFF555555)
                                     ),
                                     modifier = Modifier
                                         .weight(1f)
@@ -1019,7 +1018,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     ) {
                                         Text(
                                             text = if (isPlayingThis) "⏸ $label" else label,
-                                            color = if (isPlayingThis) Color(0xFFFFD54F) else Color.White,
+                                            color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.5.sp,
                                             fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
                                             maxLines = 1
@@ -1033,10 +1032,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             val isPlayingCustom = isCustomSelected && state.isAutoKnockEnabled
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isPlayingCustom) Color(0x33FFD54F) else Color.Transparent,
+                                color = if (isPlayingCustom) Color(0x26FFFFFF) else Color.Transparent,
                                 border = BorderStroke(
                                     width = 1.2.dp,
-                                    color = if (isPlayingCustom) Color(0xFFFFD54F) else Color(0xFF555555)
+                                    color = if (isPlayingCustom) Color.White else Color(0xFF555555)
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -1069,7 +1068,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
                                     Text(
                                         text = if (isPlayingCustom) "⏸ $customText" else customText,
-                                        color = if (isPlayingCustom) Color(0xFFFFD54F) else Color.White,
+                                        color = if (isPlayingCustom) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 13.sp,
                                         fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
                                         maxLines = 1
@@ -1119,7 +1118,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     text = "$tempBpm",
                                     fontSize = 42.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFFD54F)
+                                    color = Color.White
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -1171,8 +1170,8 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 },
                                 valueRange = 30f..300f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFFFFD54F),
-                                    activeTrackColor = Color(0xFFFFD54F),
+                                    thumbColor = Color.White,
+                                    activeTrackColor = Color.White,
                                     inactiveTrackColor = Color(0xFF383838)
                                 ),
                                 modifier = Modifier.weight(1f)
@@ -1221,7 +1220,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
                                 unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color(0xFFFFD54F),
+                                focusedBorderColor = Color.White,
                                 unfocusedBorderColor = Color.Gray
                             ),
                             modifier = Modifier.fillMaxWidth()
@@ -1235,7 +1234,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             viewModel.setCustomBpm(parsed)
                             showQuickCustomBpmDialog = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
                         Text(text = "开始", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
@@ -1287,7 +1286,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
-                                .border(1.dp, Color(0xFFFFD54F), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color.White, RoundedCornerShape(8.dp))
                                 .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 14.dp),
                             contentAlignment = Alignment.CenterStart
@@ -1302,7 +1301,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Monospace
                                 ),
-                                cursorBrush = SolidColor(Color(0xFFFFD54F)),
+                                cursorBrush = SolidColor(Color.White),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -1318,7 +1317,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     text = "倒计时规划预览 (共 ${totalMinutes} 分钟)：",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFFFFD54F)
+                                    color = Color.White
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 val previewStr = parsedStages.mapIndexed { idx, m ->
@@ -1359,10 +1358,10 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                                 showPomodoroCustomDialog = false
                                             },
                                             shape = RoundedCornerShape(8.dp),
-                                            color = if (isSelected) Color(0xFF3A301D) else Color(0xFF1E1E1E),
+                                            color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF1E1E1E),
                                             border = BorderStroke(
                                                 1.dp,
-                                                if (isSelected) Color(0xFFFFD54F) else Color(0xFF444444)
+                                                if (isSelected) Color.White else Color(0xFF444444)
                                             ),
                                             modifier = Modifier.weight(1f)
                                         ) {
@@ -1373,7 +1372,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                                 Text(
                                                     text = preset,
                                                     fontSize = 13.5.sp,
-                                                    color = if (isSelected) Color(0xFFFFD54F) else Color.White,
+                                                    color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             }
@@ -1390,7 +1389,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                             viewModel.setPomodoroCustomSequence(tempSeq)
                             showPomodoroCustomDialog = false
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
                         Text(text = "开始倒计时", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
