@@ -44,6 +44,7 @@ import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 
@@ -586,8 +587,8 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         contentDescription = "节拍器机身",
                         modifier = Modifier.fillMaxSize()
                     )
-                    // 中间粗线条摆针，左右乒乓摆动，严格收纳在白色区域内
-                    Box(
+                    // 中间粗线条摆针，以底部支点 (0.5f, 0.74f) 为旋转中心左右乒乓摆动，严格收纳在白色区域内
+                    Canvas(
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
@@ -595,13 +596,16 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                 transformOrigin = TransformOrigin(0.5f, 0.74f)
                             }
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 68.dp)
-                                .width(4.5.dp)
-                                .height(92.dp)
-                                .background(Color(0xFF111111), RoundedCornerShape(3.dp))
+                        val pivotX = size.width * 0.5f
+                        val pivotY = size.height * 0.74f
+                        val topY = size.height * 0.24f
+                        val strokeW = size.width * 0.022f // ~5.3dp, 醒目且完全在白色机身内
+                        drawLine(
+                            color = Color(0xFF111111),
+                            start = Offset(pivotX, pivotY),
+                            end = Offset(pivotX, topY),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
                         )
                     }
                 } else {

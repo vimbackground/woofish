@@ -161,7 +161,12 @@ open class MainViewModel(
         val nextIndex = (_uiState.value.soundIndex + 1) % maxSounds
         _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
         prefs.putInt("key_sound_${currentMode.id}", nextIndex)
-        audioPlayer.playHit(currentMode, nextIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
+
+        val isAutoRunning = _uiState.value.isAutoKnockEnabled ||
+            (currentMode == AppMode.POMODORO && _uiState.value.isPomodoroRunning)
+        if (!isAutoRunning) {
+            audioPlayer.playHit(currentMode, nextIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
+        }
     }
 
     fun updateSubtitle(text: String) {
@@ -405,6 +410,8 @@ open class MainViewModel(
                     if (nextStageIdx < allStages.size) {
                         if (_uiState.value.isPomodoroSoundEnabled) {
                             playTimerFinishedNotification()
+                        } else {
+                            audioPlayer.playTimerFinishedFeedback()
                         }
                         _uiState.value = _uiState.value.copy(
                             currentPomodoroStageIndex = nextStageIdx,
@@ -414,6 +421,8 @@ open class MainViewModel(
                     } else {
                         if (_uiState.value.isPomodoroSoundEnabled) {
                             playTimerFinishedNotification()
+                        } else {
+                            audioPlayer.playTimerFinishedFeedback()
                         }
                         _uiState.value = _uiState.value.copy(
                             isPomodoroRunning = false,

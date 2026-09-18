@@ -6,7 +6,7 @@
     
     <!-- 加大加宽的稳固纯白实心节拍器机身与底座色块 -->
     <path
-        android:fillColor="#EEEEEE"
+        android:fillColor="#FFFFFF"
         android:pathData="M 38,10
                           C 44,9 56,9 62,10
                           C 66,11 68,14 69,18
