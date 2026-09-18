@@ -25,7 +25,7 @@ enum class AppMode(
         id = "metronome",
         displayName = "节拍器模式",
         defaultSubtitle = "节拍",
-        soundNames = listOf("机械节拍", "木质节拍"),
+        soundNames = listOf("机械节拍", "木质节拍", "真实心跳"),
         icon = Res.drawable.ic_metronome
     ),
     DRUM(

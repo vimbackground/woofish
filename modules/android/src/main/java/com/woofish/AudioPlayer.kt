@@ -45,9 +45,10 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         woodenFishSounds.add(soundPool.load(context, R.raw.sound_fish_1, 1)) // 沉厚木鱼
         woodenFishSounds.add(soundPool.load(context, R.raw.sound_fish_2, 1)) // 清脆木鱼
 
-        // 2. 节拍器音效 (2 种)
+        // 2. 节拍器音效 (3 种：机械节拍、木质节拍、真实心跳)
         metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_1, 1))
         metronomeSounds.add(soundPool.load(context, R.raw.sound_metro_2, 1))
+        metronomeSounds.add(soundPool.load(context, R.raw.sound_heartbeat, 1))
 
         // 3. 电子鼓音效 (3 种：低音鼓、真实拍中手鼓、非洲鼓)
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_kick, 1))

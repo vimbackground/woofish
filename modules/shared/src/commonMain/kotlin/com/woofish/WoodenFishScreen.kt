@@ -42,6 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+
 // 触碰即响 (Touch DOWN 零延迟) 辅助修饰符
 fun Modifier.detectInstantTap(
     enabled: Boolean = true,
@@ -58,6 +63,49 @@ fun Modifier.detectInstantTap(
         }
     }
 } else this
+
+// 纯黑白播放与暂停矢量图标组件 (避免系统 Emoji 字体彩斑)
+@Composable
+fun BwPlayIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = Color.White
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.15f, h * 0.1f)
+            lineTo(w * 0.9f, h * 0.5f)
+            lineTo(w * 0.15f, h * 0.9f)
+            close()
+        }
+        drawPath(path, color = tint)
+    }
+}
+
+@Composable
+fun BwPauseIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = Color.White
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val barW = w * 0.28f
+        val top = h * 0.12f
+        val barH = h * 0.76f
+        drawRect(
+            color = tint,
+            topLeft = Offset(w * 0.12f, top),
+            size = Size(barW, barH)
+        )
+        drawRect(
+            color = tint,
+            topLeft = Offset(w * 0.60f, top),
+            size = Size(barW, barH)
+        )
+    }
+}
 
 @Composable
 fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {}) {
@@ -237,16 +285,16 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 自动节奏设置按钮
+                // 1. 自动节奏 / 番茄钟设置按钮
+                val isSettingActive = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
                 IconButton(
                     onClick = { viewModel.toggleAutoKnockDialog(true) },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        painter = painterResource(if (state.isAutoKnockEnabled) Res.drawable.ic_timer else Res.drawable.ic_timer_outline
-                        ),
-                        contentDescription = "自动节奏设置",
-                        tint = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
+                        painter = painterResource(if (isSettingActive) Res.drawable.ic_timer else Res.drawable.ic_timer_outline),
+                        contentDescription = if (state.currentMode == AppMode.POMODORO) "番茄钟专注设置" else "自动节奏设置",
+                        tint = if (isSettingActive) Color.White else Color(0xFF888888)
                     )
                 }
 
@@ -572,6 +620,8 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
                 border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
                 modifier = Modifier
+                    .width(148.dp)
+                    .height(50.dp)
                     .pointerInput(isRunning, state.currentMode) {
                         detectTapGestures(
                             onTap = {
@@ -600,13 +650,19 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 36.dp, vertical = 14.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(
-                        text = if (isRunning) "⏸" else "▶",
-                        fontSize = 19.sp,
-                        color = if (isRunning) Color.White else Color(0xFFB0B0B0)
-                    )
+                    if (isRunning) {
+                        BwPauseIcon(
+                            modifier = Modifier.size(14.dp),
+                            tint = Color.White
+                        )
+                    } else {
+                        BwPlayIcon(
+                            modifier = Modifier.size(14.dp),
+                            tint = Color(0xFFB0B0B0)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = if (isRunning) "暂停" else "继续",
@@ -655,12 +711,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     .weight(1f)
                                     .height(46.dp)
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
+                                    if (isRunning) {
+                                        BwPauseIcon(
+                                            modifier = Modifier.size(11.dp),
+                                            tint = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.width(5.dp))
+                                    }
                                     Text(
-                                        text = if (isRunning) "⏸ $label" else label,
+                                        text = label,
                                         color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 12.5.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -709,17 +773,25 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     )
                                 }
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 val customLabel = if (isCustomSelected && state.pomodoroCustomSequence.isNotBlank()) {
                                     "自定义 ${state.pomodoroCustomSequence}"
                                 } else {
-                                    "自定义 ✍️"
+                                    "自定义"
+                                }
+                                if (isCustomRunning) {
+                                    BwPauseIcon(
+                                        modifier = Modifier.size(11.dp),
+                                        tint = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
                                 }
                                 Text(
-                                    text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
+                                    text = customLabel,
                                     color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
                                     fontSize = 12.5.sp,
                                     fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
@@ -746,12 +818,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     .weight(1f)
                                     .height(46.dp)
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
+                                    if (isPlayingThis) {
+                                        BwPauseIcon(
+                                            modifier = Modifier.size(11.dp),
+                                            tint = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.width(5.dp))
+                                    }
                                     Text(
-                                        text = if (isPlayingThis) "⏸ $label" else label,
+                                        text = label,
                                         color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 13.sp,
                                         fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
@@ -795,13 +875,21 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                     )
                                 }
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
+                                val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义"
+                                if (isPlayingCustom) {
+                                    BwPauseIcon(
+                                        modifier = Modifier.size(11.dp),
+                                        tint = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                }
                                 Text(
-                                    text = if (isPlayingCustom) "⏸ $customText" else customText,
+                                    text = customText,
                                     color = if (isPlayingCustom) Color.White else Color(0xFFB0B0B0),
                                     fontSize = 13.sp,
                                     fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
@@ -840,12 +928,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         .weight(1f)
                                         .height(48.dp)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
+                                        if (isRunning) {
+                                            BwPauseIcon(
+                                                modifier = Modifier.size(11.dp),
+                                                tint = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
                                         Text(
-                                            text = if (isRunning) "⏸ $label" else label,
+                                            text = label,
                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -878,12 +974,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         .weight(1f)
                                         .height(48.dp)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
+                                        if (isRunning) {
+                                            BwPauseIcon(
+                                                modifier = Modifier.size(11.dp),
+                                                tint = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
                                         Text(
-                                            text = if (isRunning) "⏸ $label" else label,
+                                            text = label,
                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -932,17 +1036,25 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         )
                                     }
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     val customLabel = if (isCustomSelected && state.pomodoroCustomSequence.isNotBlank()) {
                                         "自定义 ${state.pomodoroCustomSequence}"
                                     } else {
-                                        "自定义 ✍️"
+                                        "自定义"
+                                    }
+                                    if (isCustomRunning) {
+                                        BwPauseIcon(
+                                            modifier = Modifier.size(11.dp),
+                                            tint = if (isCustomSelected) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
                                     }
                                     Text(
-                                        text = if (isCustomRunning) "⏸ $customLabel" else customLabel,
+                                        text = customLabel,
                                         color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 12.sp,
                                         fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
@@ -974,12 +1086,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         .weight(1f)
                                         .height(48.dp)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
+                                        if (isPlayingThis) {
+                                            BwPauseIcon(
+                                                modifier = Modifier.size(11.dp),
+                                                tint = if (isPlayingThis) Color.White else Color(0xFFB0B0B0)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
                                         Text(
-                                            text = if (isPlayingThis) "⏸ $label" else label,
+                                            text = label,
                                             color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.5.sp,
                                             fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
@@ -1012,12 +1132,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         .weight(1f)
                                         .height(48.dp)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
+                                        if (isPlayingThis) {
+                                            BwPauseIcon(
+                                                modifier = Modifier.size(11.dp),
+                                                tint = if (isPlayingThis) Color.White else Color(0xFFB0B0B0)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
                                         Text(
-                                            text = if (isPlayingThis) "⏸ $label" else label,
+                                            text = label,
                                             color = if (isPlayingThis) Color.White else Color(0xFFB0B0B0),
                                             fontSize = 13.5.sp,
                                             fontWeight = if (isPlayingThis) FontWeight.Bold else FontWeight.Medium,
@@ -1061,13 +1189,21 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                                         )
                                     }
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义 ✍️"
+                                    val customText = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义"
+                                    if (isPlayingCustom) {
+                                        BwPauseIcon(
+                                            modifier = Modifier.size(11.dp),
+                                            tint = if (isPlayingCustom) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                    }
                                     Text(
-                                        text = if (isPlayingCustom) "⏸ $customText" else customText,
+                                        text = customText,
                                         color = if (isPlayingCustom) Color.White else Color(0xFFB0B0B0),
                                         fontSize = 13.sp,
                                         fontWeight = if (isPlayingCustom) FontWeight.Bold else FontWeight.Medium,
@@ -1413,7 +1549,29 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 onDismiss = { viewModel.toggleAutoKnockDialog(false) },
                 onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
                 onBpmChange = { viewModel.setBpm(it) },
-                onSubtitleChange = { viewModel.updateSubtitle(it) }
+                onSubtitleChange = { viewModel.updateSubtitle(it) },
+                onTogglePomodoro = {
+                    if (state.isPomodoroRunning) {
+                        viewModel.pausePomodoro()
+                    } else if (state.pomodoroRemainingSeconds > 0L) {
+                        viewModel.resumePomodoro()
+                    } else {
+                        val stages = viewModel.parsePomodoroSequence(state.pomodoroCustomSequence)
+                        viewModel.startPomodoro("自定义", stages)
+                    }
+                },
+                onPomodoroPresetClick = { label, stages ->
+                    viewModel.onPomodoroPresetClick(label, stages)
+                },
+                onPomodoroCustomSeqChange = { seq ->
+                    viewModel.setPomodoroCustomSequence(seq)
+                },
+                onTogglePomodoroSound = {
+                    viewModel.togglePomodoroSound()
+                },
+                onParsePomodoroSeq = { seq ->
+                    viewModel.parsePomodoroSequence(seq)
+                }
             )
         }
 

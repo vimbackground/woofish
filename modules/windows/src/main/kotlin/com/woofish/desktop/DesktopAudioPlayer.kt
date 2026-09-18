@@ -73,9 +73,10 @@ class DesktopAudioPlayer : IAudioPlayer {
         loadResource("raw/sound_fish_1.wav")?.let { woodenFishPools.add(PreloadedClipPool(it)) }
         loadResource("raw/sound_fish_2.wav")?.let { woodenFishPools.add(PreloadedClipPool(it)) }
 
-        // 2. 节拍器音效
+        // 2. 节拍器音效 (机械节拍、木质节拍、真实心跳)
         loadResource("raw/sound_metro_1.wav")?.let { metronomePools.add(PreloadedClipPool(it)) }
         loadResource("raw/sound_metro_2.wav")?.let { metronomePools.add(PreloadedClipPool(it)) }
+        loadResource("raw/sound_heartbeat.wav")?.let { metronomePools.add(PreloadedClipPool(it)) }
 
         // 3. 电子鼓音效
         loadResource("raw/sound_drum_kick.wav")?.let { drumPools.add(PreloadedClipPool(it)) }
