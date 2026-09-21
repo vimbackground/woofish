@@ -165,6 +165,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             .systemBarsPadding()
     ) {
         val isLandscape = maxWidth > maxHeight
+        var showModeDialog by remember { mutableStateOf(false) }
 
         // 全屏点击响应区域
         // 需求5：自动敲击状态下点击屏幕不发声且立即停止自动敲击；非自动敲击状态下才为手动敲击发声
@@ -191,8 +192,8 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         )
 
         // -------------------------------------------------------------
-        // 1. 顶栏全部保留：
-        // 左侧【BGM + 动效 + 音效】，右侧【自动节奏设置 + 清屏 + 软件设置】
+        // 1. 顶栏全新工整布局：
+        // 左侧【清屏模式 + 动效开关】，右侧【运行模式 + 计时节奏设置 + 声音设置 + 软件设置】
         // -------------------------------------------------------------
         Row(
             modifier = Modifier
@@ -203,30 +204,22 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ◀ 左上角：【BGM 开关】 + 【动效开关】 + 【音效切换】
+            // ◀ 左上角：【清屏开关】 + 【动效开关】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 背景音乐开关
+                // 1. 清屏开关按钮（置于左上角首位，满足需求6）
                 IconButton(
-                    onClick = {
-                        if (state.customBgmUri == null) {
-                            onPickCustomBgm()
-                        } else {
-                            viewModel.toggleBgm()
-                        }
-                    },
+                    onClick = { viewModel.toggleZenMode() },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        painter = painterResource(Res.drawable.ic_music_note),
-                        contentDescription = if (state.customBgmUri == null) "选择本地背景音乐" else "背景音乐开关",
-                        tint = when {
-                            state.isBgmPlaying -> Color.White
-                            state.customBgmUri != null -> Color(0xFFB0B0B0)
-                            else -> Color(0xFF888888)
-                        }
+                        painter = painterResource(
+                            if (state.isZenMode) Res.drawable.ic_visibility else Res.drawable.ic_visibility_off
+                        ),
+                        contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
+                        tint = if (state.isZenMode) Color.White else Color(0xFF888888)
                     )
                 }
 
@@ -236,57 +229,34 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        painter = painterResource(if (state.isAnimationEnabled) Res.drawable.ic_auto_awesome else Res.drawable.ic_auto_awesome_outline
+                        painter = painterResource(
+                            if (state.isAnimationEnabled) Res.drawable.ic_auto_awesome else Res.drawable.ic_auto_awesome_outline
                         ),
                         contentDescription = "动效开关",
                         tint = if (state.isAnimationEnabled) Color.White else Color(0xFF888888)
                     )
                 }
-
-                // 3. 当前模式下的专属音效切换胶囊按钮 (番茄钟模式直接开关滴答音)
-                if (state.currentMode == AppMode.POMODORO) {
-                    val isSoundOn = state.isPomodoroSoundEnabled
-                    Surface(
-                        onClick = { viewModel.togglePomodoroSound() },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSoundOn) Color(0x33FFFFFF) else Color(0xFF222222),
-                        border = if (isSoundOn) BorderStroke(1.dp, Color.White) else null,
-                        tonalElevation = 2.dp
-                    ) {
-                        Text(
-                            text = if (isSoundOn) "🔊 滴答音" else "🔇 静音",
-                            color = if (isSoundOn) Color.White else Color(0xFF888888),
-                            fontSize = 13.sp,
-                            fontWeight = if (isSoundOn) FontWeight.SemiBold else FontWeight.Normal,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                } else {
-                    val currentSoundName = state.currentMode.soundNames.getOrNull(state.soundIndex)
-                        ?: state.currentMode.soundNames.firstOrNull() ?: "音效"
-                    Surface(
-                        onClick = { viewModel.toggleSoundEffect() },
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFF222222),
-                        tonalElevation = 2.dp
-                    ) {
-                        Text(
-                            text = "🔊 $currentSoundName",
-                            color = Color(0xFFB0B0B0),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                }
             }
 
-            // ▶ 右上角：【自动节奏/节拍器设置】 + 【清屏开关】 + 【软件设置】
+            // ▶ 右上角：【运行模式】 + 【计时/节奏设置】 + 【声音设置】 + 【软件设置】
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. 自动节奏 / 番茄钟设置按钮
+                // 0. 运行模式切换按钮 (满足需求6：独立设立按钮并位于时间设置左侧)
+                IconButton(
+                    onClick = { showModeDialog = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(state.currentMode.icon),
+                        contentDescription = "运行模式：${state.currentMode.displayName}",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // 1. 计时与节奏设置按钮 (满足需求5)
                 val isSettingActive = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
                 IconButton(
                     onClick = { viewModel.toggleAutoKnockDialog(true) },
@@ -294,21 +264,29 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 ) {
                     Icon(
                         painter = painterResource(if (isSettingActive) Res.drawable.ic_timer else Res.drawable.ic_timer_outline),
-                        contentDescription = if (state.currentMode == AppMode.POMODORO) "番茄钟专注设置" else "自动节奏设置",
+                        contentDescription = when (state.currentMode) {
+                            AppMode.WOODEN_FISH -> "木鱼节奏设置"
+                            AppMode.METRONOME -> "节拍器节奏设置"
+                            AppMode.DRUM -> "电子鼓节奏设置"
+                            AppMode.POMODORO -> "番茄钟专注设置"
+                        },
                         tint = if (isSettingActive) Color.White else Color(0xFF888888)
                     )
                 }
 
-                // 2. 清屏开关按钮
+                // 2. 音乐与音效设置按钮（满足需求4：弹出专门声音设置窗口，放在右上角）
                 IconButton(
-                    onClick = { viewModel.toggleZenMode() },
+                    onClick = { viewModel.toggleAudioSettingsDialog(true) },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        painter = painterResource(if (state.isZenMode) Res.drawable.ic_visibility else Res.drawable.ic_visibility_off
-                        ),
-                        contentDescription = if (state.isZenMode) "退出清屏" else "进入清屏",
-                        tint = if (state.isZenMode) Color.White else Color(0xFF888888)
+                        painter = painterResource(Res.drawable.ic_music_note),
+                        contentDescription = "声音设置",
+                        tint = when {
+                            state.isBgmPlaying -> Color.White
+                            state.customBgmUri != null -> Color(0xFFB0B0B0)
+                            else -> Color(0xFF888888)
+                        }
                     )
                 }
 
@@ -636,9 +614,9 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             listOf(
                 "2分钟" to listOf(2),
                 "5分钟" to listOf(5),
-                "10分钟" to listOf(10),
-                "25+5分钟" to listOf(25, 5),
-                "50+10分钟" to listOf(50, 10)
+                "6+2分钟" to listOf(6, 2),
+                "15+5分钟" to listOf(15, 5),
+                "25+5分钟" to listOf(25, 5)
             )
         }
         val pomodoroTopPresets = remember { pomodoroPresets.take(3) }
@@ -652,6 +630,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
 
         // -------------------------------------------------------------
         // 清屏模式专属：屏幕下方中间低干扰"暂停/继续"按钮
+        // 按钮上方显示微光不明显文字：当前节奏频率或番茄钟时间安排
         // 短按暂停/继续 乒乓切换，长按重新开始计时
         // -------------------------------------------------------------
         AnimatedVisibility(
@@ -660,64 +639,88 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             exit = fadeOut(tween(200)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (isLandscape) 60.dp else 92.dp)
+                .padding(bottom = if (isLandscape) 46.dp else 76.dp)
         ) {
             val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
-            Surface(
-                shape = CircleShape,
-                color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
-                border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
-                modifier = Modifier
-                    .width(148.dp)
-                    .height(50.dp)
-                    .pointerInput(isRunning, state.currentMode) {
-                        detectTapGestures(
-                            onTap = {
-                                if (state.currentMode == AppMode.POMODORO) {
-                                    if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
-                                } else {
-                                    viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
-                                }
-                            },
-                            onLongPress = {
-                                if (state.currentMode == AppMode.POMODORO) {
-                                    viewModel.restartPomodoro()
-                                } else {
-                                    if (state.isTimerEnabled) {
-                                        viewModel.resetTimer()
-                                    }
-                                    viewModel.toggleAutoKnock(true)
-                                }
-                                if (state.vibrationMs > 0) {
-                                    viewModel.audioPlayer.vibrateManualKnock(40)
-                                }
-                            }
-                        )
-                    }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (isRunning) {
-                        BwPauseIcon(
-                            modifier = Modifier.size(14.dp),
-                            tint = Color.White
-                        )
+                // 不明显文字显示当前的节奏频率或者番茄钟时间安排
+                val zenInfoText = if (state.currentMode == AppMode.POMODORO) {
+                    val stagesStr = state.pomodoroStages.joinToString("+") + "分钟"
+                    if (state.pomodoroStages.size > 1) {
+                        "阶段 ${state.currentPomodoroStageIndex + 1}/${state.pomodoroStages.size} ($stagesStr)"
                     } else {
-                        BwPlayIcon(
-                            modifier = Modifier.size(14.dp),
-                            tint = Color(0xFFB0B0B0)
+                        stagesStr
+                    }
+                } else {
+                    "${state.bpm} BPM"
+                }
+                Text(
+                    text = zenInfoText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color(0x66FFFFFF),
+                    letterSpacing = 0.5.sp
+                )
+
+                Surface(
+                    shape = CircleShape,
+                    color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
+                    border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
+                    modifier = Modifier
+                        .width(148.dp)
+                        .height(50.dp)
+                        .pointerInput(isRunning, state.currentMode) {
+                            detectTapGestures(
+                                onTap = {
+                                    if (state.currentMode == AppMode.POMODORO) {
+                                        if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
+                                    } else {
+                                        viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
+                                    }
+                                },
+                                onLongPress = {
+                                    if (state.currentMode == AppMode.POMODORO) {
+                                        viewModel.restartPomodoro()
+                                    } else {
+                                        if (state.isTimerEnabled) {
+                                            viewModel.resetTimer()
+                                        }
+                                        viewModel.toggleAutoKnock(true)
+                                    }
+                                    if (state.vibrationMs > 0) {
+                                        viewModel.audioPlayer.vibrateManualKnock(40)
+                                    }
+                                }
+                            )
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        if (isRunning) {
+                            BwPauseIcon(
+                                modifier = Modifier.size(14.dp),
+                                tint = Color.White
+                            )
+                        } else {
+                            BwPlayIcon(
+                                modifier = Modifier.size(14.dp),
+                                tint = Color(0xFFB0B0B0)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = if (isRunning) "暂停" else "继续",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isRunning) Color.White else Color(0xFFB0B0B0)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = if (isRunning) "暂停" else "继续",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isRunning) Color.White else Color(0xFFB0B0B0)
-                    )
                 }
             }
         }
@@ -1434,7 +1437,13 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         // 5. 自定义番茄钟倒计时弹窗（支持多阶段如 15+5）
         if (showPomodoroCustomDialog) {
             var tempSeq by remember(showPomodoroCustomDialog) {
-                mutableStateOf(if (state.pomodoroCustomSequence.isNotBlank()) state.pomodoroCustomSequence else "15+5")
+                mutableStateOf(
+                    if (state.pomodoroCustomSequence.isNotBlank() && state.pomodoroCustomSequence !in listOf("15+5", "25+5", "45+15", "50+10")) {
+                        state.pomodoroCustomSequence
+                    } else {
+                        "5+2+1"
+                    }
+                )
             }
             val parsedStages = remember(tempSeq) {
                 viewModel.parsePomodoroSequence(tempSeq)
@@ -1536,17 +1545,17 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         }
 
         // -------------------------------------------------------------
-        // 6. 自动节奏/BPM调节弹窗 (横屏下直接作为完整全屏界面呈现)
+        // 6. 计时与节奏设置弹窗 (横屏下直接作为完整全屏界面呈现)
         // -------------------------------------------------------------
         if (state.showAutoKnockDialog) {
             AutoKnockDialog(
                 state = state,
-                streamProvider = viewModel.audioStreamProvider,
                 isLandscape = isLandscape,
                 onDismiss = { viewModel.toggleAutoKnockDialog(false) },
                 onToggleAutoKnock = { viewModel.toggleAutoKnock(it) },
                 onBpmChange = { viewModel.setBpm(it) },
-                onSubtitleChange = { viewModel.updateSubtitle(it) },
+                onToggleTimer = { viewModel.toggleTimer(it) },
+                onTimerDurationChange = { viewModel.setTimerDuration(it) },
                 onTogglePomodoro = {
                     if (state.isPomodoroRunning) {
                         viewModel.pausePomodoro()
@@ -1563,30 +1572,127 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 onPomodoroCustomSeqChange = { seq ->
                     viewModel.setPomodoroCustomSequence(seq)
                 },
-                onTogglePomodoroSound = {
-                    viewModel.togglePomodoroSound()
-                },
                 onParsePomodoroSeq = { seq ->
                     viewModel.parsePomodoroSequence(seq)
+                },
+                onTempoPresetClick = { label, bpm ->
+                    viewModel.onTempoPresetClick(label, bpm)
+                },
+                onTempoCustomClick = {
+                    viewModel.onTempoCustomClick()
+                },
+                onSetCustomBpm = {
+                    viewModel.setCustomBpm(it)
                 }
             )
         }
 
         // -------------------------------------------------------------
-        // 7. 软件设置弹窗 (横屏下直接作为完整全屏界面呈现)
+        // 7. 运行模式选择弹窗 (满足需求6)
+        // -------------------------------------------------------------
+        if (showModeDialog) {
+            AlertDialog(
+                onDismissRequest = { showModeDialog = false },
+                containerColor = Color(0xFF1E1E1E),
+                title = {
+                    Text(
+                        text = "模式选择",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        AppMode.entries.forEach { mode ->
+                            val isSelected = state.currentMode == mode
+                            Surface(
+                                onClick = {
+                                    viewModel.setAppMode(mode)
+                                    showModeDialog = false
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0x26FFFFFF) else Color(0xFF282828),
+                                border = if (isSelected) BorderStroke(1.2.dp, Color.White) else BorderStroke(1.dp, Color(0xFF383838)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(mode.icon),
+                                        contentDescription = null,
+                                        tint = if (isSelected) Color.White else Color(0xFFB0B0B0),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = mode.displayName,
+                                            fontSize = 15.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else Color(0xFFE0E0E0)
+                                        )
+                                        val modeDesc = when (mode) {
+                                            AppMode.WOODEN_FISH -> "禅音正念 · 积聚功德 · 平和心绪"
+                                            AppMode.METRONOME -> "精准律动 · 节拍辅助 · 稳定速率"
+                                            AppMode.DRUM -> "节奏打击 · 动感鼓点 · 释放压力"
+                                            AppMode.POMODORO -> "高效专注 · 阶段规划 · 沉浸自律"
+                                        }
+                                        Text(
+                                            text = modeDesc,
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFF888888)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showModeDialog = false }) {
+                        Text(text = "关闭", color = Color.White)
+                    }
+                }
+            )
+        }
+
+        // -------------------------------------------------------------
+        // 8. 音乐与音效设置弹窗 (满足需求4)
+        // -------------------------------------------------------------
+        if (state.showAudioSettings) {
+            AudioSettingsDialog(
+                state = state,
+                streamProvider = viewModel.audioStreamProvider,
+                isLandscape = isLandscape,
+                onDismiss = { viewModel.toggleAudioSettingsDialog(false) },
+                onToggleBgm = { viewModel.toggleBgm() },
+                onPickBgm = { onPickCustomBgm() },
+                onClearBgm = { viewModel.clearCustomBgm() },
+                onVolumeChange = { viewModel.updateBgmVolume(it) },
+                onSoundIndexChange = { viewModel.setSoundIndex(it) },
+                onTogglePomodoroSound = { viewModel.togglePomodoroSound() },
+                onBpmChange = { viewModel.setBpm(it) }
+            )
+        }
+
+        // -------------------------------------------------------------
+        // 9. 软件设置弹窗 (横屏下直接作为完整全屏界面呈现)
         // -------------------------------------------------------------
         if (state.showSettings) {
             SettingsDialog(
                 state = state,
                 isLandscape = isLandscape,
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
-                onModeChange = { viewModel.setAppMode(it) },
-                onVolumeChange = { viewModel.updateBgmVolume(it) },
+                onSubtitleChange = { viewModel.updateSubtitle(it) },
                 onVibrationChange = { viewModel.updateVibrationMs(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
-                onResetCount = { viewModel.resetCount() },
-                onPickBgm = { onPickCustomBgm() },
-                onClearBgm = { viewModel.clearCustomBgm() }
+                onResetCount = { viewModel.resetCount() }
             )
         }
     }

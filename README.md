@@ -1,10 +1,10 @@
 # ⏰ 正念 (woofish)
 
 > **极简 · 禅意 · 专注**  
-> 一款跨平台的电子木鱼与正念修行伴侣，帮你在快节奏的生活中找回内心的平静。
+> 一款极简纯粹的电子木鱼与正念修行伴侣，帮你在快节奏的生活中找回内心的平静。
 
 [![Release](https://img.shields.io/github/v/release/vimbackground/woofish?color=3388ff&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/vimbackground/woofish/releases/latest)
-[![Platform](https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Android%20%7C%20Windows-brightgreen)](https://github.com/vimbackground/woofish/releases/latest)
+[![Platform](https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Android-brightgreen)](https://github.com/vimbackground/woofish/releases/latest)
 [![Size](https://img.shields.io/badge/Android%20%E4%BD%93%E7%A7%AF-1.2%20MB-blue)](https://github.com/vimbackground/woofish/releases/latest)
 [![License](https://img.shields.io/badge/%E7%BA%AF%E7%B2%B9-%E6%97%A0%E5%B9%BF%E5%91%8A%20%7C%20%E6%97%A0%E8%BF%BD%E8%B8%AA-orange)](https://github.com/vimbackground/woofish)
 
@@ -14,7 +14,7 @@
 
 在忙碌喧嚣的日常与工作间隙，给心灵留出一片清净。
 
-**正念 (woofish)** 是一款极简纯粹的正念与律动辅助工具，支持 **Android 手机** 与 **Windows 电脑**。无论是敲木鱼积攒功德、番茄钟深度专注、听音节拍律动，还是在白噪音中放松小憩，它都能为你提供温润、舒适且无打扰的陪伴。
+**正念 (woofish)** 是一款极简纯粹的正念与律动辅助工具。无论是敲木鱼积攒功德、番茄钟深度专注、听音节拍律动，还是在白噪音中放松小憩，它都能为你提供温润、舒适且无打扰的陪伴。
 
 ---
 
@@ -47,24 +47,11 @@
 
 ## 📥 下载与安装
 
-请前往 [**GitHub Releases 最新发布页**](https://github.com/vimbackground/woofish/releases/latest) 下载对应平台的安装包：
+请前往 [**GitHub Releases 最新发布页**](https://github.com/vimbackground/woofish/releases/latest) 下载 Android 安装包：
 
 | 平台 | 安装方式 | 特点 |
 | :--- | :--- | :--- |
 | 📱 **Android** | 下载 `woofish-x.x.x.apk` 直接安装 | **体积仅约 1.2 MB**，秒速下载安装，轻巧纯粹 |
-| 💻 **Windows** | 下载 `woofish-x.x.x-windows-x64.zip` 解压使用 | **绿色免安装**，解压后双击 `woofish.exe` 即可启动，无需配置环境 |
-
----
-
-## ⌨️ Windows 电脑快捷键
-
-Windows 桌面版为办公摸鱼与键盘操作提供了贴心快捷键支持：
-
-- **`空格键 (Space)`**：敲击木鱼 / 击打手鼓 / 启停番茄钟
-- **`数字键 1 ~ 5`**：快速切换自动节奏档位
-- **`回车键 (Enter)` / `退格键 (Backspace)`**：计数一键清零
-- **`Z 键`**：一键切换沉浸清屏模式
-- **`M 键`**：背景音乐开关
 
 ---
 
@@ -81,14 +68,13 @@ Windows 桌面版为办公摸鱼与键盘操作提供了贴心快捷键支持：
 
 ### 技术栈
 - **语言**：Kotlin 2.0
-- **跨平台 UI**：Compose Multiplatform (Material 3)
-- **多模块架构**：`:shared` (共享 UI 与业务逻辑)、`:app` (Android 端)、`:desktop` (Windows 桌面端)
+- **界面引擎**：Jetpack Compose (Material 3)
+- **架构组织**：`:shared` (公共 UI 与核心业务逻辑)、`:app` (Android 原生应用端)
 - **编译优化**：Google R8 代码优化与资源精简 (Android APK 仅 1.2 MB)
 
 ### 本地编译
-在项目根目录下，双击运行对应脚本即可快速编译（要求已安装 JDK 17 及 Android SDK）：
-- **单独编译 Android APK**：运行 `./build_apk.bat`，产物位于 `_Dist/android/`
-- **双端全量编译**：运行 `./build_local.bat`，产物位于 `_Dist/`
+在项目根目录下，运行脚本即可快速编译（要求已安装 JDK 17 及 Android SDK）：
+- 运行 `./build_apk.bat` 或 `./build_local.bat`，产物自动归档至 `_Dist/android/`
 
 </details>
 

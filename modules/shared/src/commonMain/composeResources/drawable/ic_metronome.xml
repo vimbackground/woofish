@@ -1,32 +1,31 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="200dp"
-    android:height="200dp"
+    android:width="24dp"
+    android:height="24dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    
-    <!-- 加大加宽的稳固纯白实心节拍器机身与底座色块 -->
+    <!-- 加大加宽的稳固纯白实心节拍器机身与底座色块（规格高度与其他模式严格对齐） -->
     <path
         android:fillColor="#EEEEEE"
-        android:pathData="M 38,10
-                          C 44,9 56,9 62,10
-                          C 66,11 68,14 69,18
-                          L 85,78
-                          C 87,84 83,88 77,88
-                          L 23,88
-                          C 17,88 13,84 15,78
-                          L 31,18
-                          C 32,14 34,11 38,10 Z" />
+        android:pathData="M 39.02,14.64
+        C 44.51,13.73 55.49,13.73 60.98,14.64
+        C 64.64,15.56 66.47,18.30 67.38,21.96
+        L 82.02,76.85
+        C 83.85,82.34 80.19,86.00 74.70,86.00
+        L 25.30,86.00
+        C 19.81,86.00 16.15,82.34 17.98,76.85
+        L 32.62,21.96
+        C 33.53,18.30 35.36,15.56 39.02,14.64 Z" />
 
     <!-- 中间黑色粗线条摆针（居中静止，不超外部白区范围） -->
     <path
         android:strokeColor="#111111"
-        android:strokeWidth="5"
+        android:strokeWidth="4.57"
         android:strokeLineCap="round"
-        android:pathData="M 50,74 L 50,22" />
+        android:pathData="M 50.00,73.19 L 50.00,25.62" />
 
     <!-- 内部黑色反显底部摆轴支点 -->
     <path
         android:fillColor="#111111"
-        android:pathData="M 50,74
-                          A 4.5,4.5 0 1,1 49.99,74 Z" />
+        android:pathData="M 50.00,73.19
+        A 4.12,4.12 0 1,1 49.99,73.19 Z" />
 </vector>

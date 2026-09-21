@@ -6,7 +6,6 @@
 /build
 **/build/
 /app/build
-/desktop/build
 /shared/build
 /captures
 .externalNativeBuild

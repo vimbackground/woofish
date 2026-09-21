@@ -17,14 +17,6 @@ kotlin {
             }
         }
     }
-    jvm("desktop") {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
-        }
-    }
-
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -36,10 +28,6 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
-        }
-        val desktopMain by getting {
-            dependencies {
-            }
         }
     }
 }

@@ -26,6 +26,7 @@ data class WoodenFishUiState(
     val isZenMode: Boolean = false,
     val isBigNumberMode: Boolean = false,
     val showSettings: Boolean = false,
+    val showAudioSettings: Boolean = false,
     val isAutoKnockEnabled: Boolean = false,
     val bpm: Int = 60,
     val autoKnockIntervalMs: Long = 1000L,
@@ -45,7 +46,7 @@ data class WoodenFishUiState(
     val currentPomodoroStageIndex: Int = 0,
     val pomodoroRemainingSeconds: Long = 25 * 60L,
     val pomodoroActivePreset: String = "",
-    val pomodoroCustomSequence: String = "15+5",
+    val pomodoroCustomSequence: String = "5+2+1",
     val pomodoroStageFinishedTrigger: Long = 0L,
     val isPomodoroSoundEnabled: Boolean = true
 )
@@ -70,7 +71,11 @@ open class MainViewModel(
     private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
     private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
     private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
-    private val initialPomodoroCustomSeq: String = prefs.getString("key_pomodoro_custom_sequence", "15+5") ?: "15+5"
+    private val savedPomodoroSeq: String? = prefs.getString("key_pomodoro_custom_sequence_v2", null)
+        ?: prefs.getString("key_pomodoro_custom_sequence", null)?.takeIf {
+            it !in listOf("15+5", "25+5", "45+15", "50+10", "15+5分钟", "25+5分钟")
+        }
+    private val initialPomodoroCustomSeq: String = savedPomodoroSeq?.ifBlank { "5+2+1" } ?: "5+2+1"
     private val initialPomodoroSound: Boolean = prefs.getBoolean("key_pomodoro_sound_enabled", true)
 
     private val _uiState = MutableStateFlow(
@@ -167,6 +172,23 @@ open class MainViewModel(
         if (!isAutoRunning) {
             audioPlayer.playHit(currentMode, nextIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
         }
+    }
+
+    fun setSoundIndex(index: Int) {
+        val currentMode = _uiState.value.currentMode
+        val safeIndex = index.coerceIn(0, (currentMode.soundNames.size - 1).coerceAtLeast(0))
+        _uiState.value = _uiState.value.copy(soundIndex = safeIndex)
+        prefs.putInt("key_sound_${currentMode.id}", safeIndex)
+
+        val isAutoRunning = _uiState.value.isAutoKnockEnabled ||
+            (currentMode == AppMode.POMODORO && _uiState.value.isPomodoroRunning)
+        if (!isAutoRunning) {
+            audioPlayer.playHit(currentMode, safeIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
+        }
+    }
+
+    fun toggleAudioSettingsDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showAudioSettings = show)
     }
 
     fun updateSubtitle(text: String) {
@@ -379,7 +401,7 @@ open class MainViewModel(
         val items = input.split('+', '、', ',', '，', ' ')
             .mapNotNull { it.trim().toIntOrNull() }
             .filter { it in 1..180 }
-        return if (items.isNotEmpty()) items else listOf(25)
+        return if (items.isNotEmpty()) items else listOf(5, 2, 1)
     }
 
     fun startPomodoro(presetLabel: String, stages: List<Int>) {
@@ -408,17 +430,15 @@ open class MainViewModel(
                     val nextStageIdx = _uiState.value.currentPomodoroStageIndex + 1
                     val allStages = _uiState.value.pomodoroStages
                     if (nextStageIdx < allStages.size) {
-                        if (_uiState.value.isPomodoroSoundEnabled) {
-                            playTimerFinishedNotification()
-                        } else {
-                            audioPlayer.playTimerFinishedFeedback()
-                        }
+                        // 分阶段计时：中间每一阶段结束时响 1 声
+                        audioPlayer.playTimerFinishedFeedback()
                         _uiState.value = _uiState.value.copy(
                             currentPomodoroStageIndex = nextStageIdx,
                             pomodoroRemainingSeconds = allStages[nextStageIdx] * 60L,
                             pomodoroStageFinishedTrigger = System.currentTimeMillis()
                         )
                     } else {
+                        // 最后全部结束时：开启嘀嗒音响 3 声，不开启嘀嗒音（静音走针）时只响 1 声
                         if (_uiState.value.isPomodoroSoundEnabled) {
                             playTimerFinishedNotification()
                         } else {
@@ -561,6 +581,7 @@ open class MainViewModel(
         val trimmed = seqStr.trim()
         val stages = parsePomodoroSequence(trimmed)
         prefs.putString("key_pomodoro_custom_sequence", trimmed)
+        prefs.putString("key_pomodoro_custom_sequence_v2", trimmed)
         _uiState.value = _uiState.value.copy(
             pomodoroCustomSequence = trimmed
         )

@@ -1,29 +1,29 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="200dp"
-    android:height="200dp"
-    android:viewportWidth="200"
-    android:viewportHeight="200">
-    <!-- 极简纯白实心圆形钟表底盘 (整块白底) -->
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- 极简纯白实心圆形钟表底盘（规格高度与其他模式严格对齐） -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 100,22 A 78,78 0 1,0 100,178 A 78,78 0 1,0 100,22 Z" />
+        android:pathData="M 50,14 A 36,36 0 1,0 50,86 A 36,36 0 1,0 50,14 Z" />
 
     <!-- 黑色时针 (指向 10 点方向，坚实稳重) -->
     <path
         android:strokeColor="#111111"
-        android:strokeWidth="8"
+        android:strokeWidth="3.69"
         android:strokeLineCap="round"
-        android:pathData="M 100,100 L 64,78" />
+        android:pathData="M 50.00,50.00 L 33.38,39.85" />
 
     <!-- 黑色分针 (指向 2 点方向，修长舒展) -->
     <path
         android:strokeColor="#111111"
-        android:strokeWidth="5.5"
+        android:strokeWidth="2.54"
         android:strokeLineCap="round"
-        android:pathData="M 100,100 L 152,70" />
+        android:pathData="M 50.00,50.00 L 74.00,36.15" />
 
     <!-- 中心黑色轴点 -->
     <path
         android:fillColor="#111111"
-        android:pathData="M 100,94 A 6,6 0 1,0 100,106 A 6,6 0 1,0 100,94 Z" />
+        android:pathData="M 50.00,47.23 A 2.77,2.77 0 1,0 50.00,52.77 A 2.77,2.77 0 1,0 50.00,47.23 Z" />
 </vector>

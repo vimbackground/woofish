@@ -30,14 +30,16 @@ fun SettingsContent(
     state: WoodenFishUiState,
     isLandscape: Boolean = false,
     onDismiss: () -> Unit,
-    onModeChange: (AppMode) -> Unit,
-    onVolumeChange: (Float) -> Unit,
+    onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
-    onResetCount: () -> Unit,
-    onPickBgm: () -> Unit,
-    onClearBgm: () -> Unit
+    onResetCount: () -> Unit
 ) {
+    var subtitleInput by remember { mutableStateOf(state.subtitle) }
+    LaunchedEffect(state.subtitle) {
+        subtitleInput = state.subtitle
+    }
+
     if (isLandscape) {
         Column(
             modifier = Modifier
@@ -78,47 +80,41 @@ fun SettingsContent(
                     .verticalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(36.dp)
             ) {
-                // 左侧列：模式切换 + 敲击震动 + 全屏敲击 + 统计清零
+                // 左侧列：文案设置 + 敲击震动
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 1. 运行模式切换
+                    // 1. 显示文案自定义 (纯输入框，去除标签选择)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                        val modeChunks = AppMode.entries.chunked(2)
-                        modeChunks.forEach { rowModes ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                rowModes.forEach { mode ->
-                                    val isSelected = state.currentMode == mode
-                                    Surface(
-                                        onClick = { onModeChange(mode) },
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0x26FFFFFF) else Color(0xFF282828),
-                                        border = if (isSelected) BorderStroke(1.2.dp, Color.White) else null,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.padding(vertical = 10.dp)
-                                        ) {
-                                            Text(
-                                                text = mode.displayName.replace("模式", ""),
-                                                fontSize = 13.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                            )
-                                        }
-                                    }
-                                }
+                        Text(text = "显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .border(1.dp, Color(0xFF444444), RoundedCornerShape(8.dp))
+                                .background(Color(0xFF242424), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (subtitleInput.isEmpty()) {
+                                Text("例如：正念、功德、专注、节拍", fontSize = 13.sp, color = Color(0xFF666666))
                             }
+                            BasicTextField(
+                                value = subtitleInput,
+                                onValueChange = {
+                                    subtitleInput = it
+                                    onSubtitleChange(it)
+                                },
+                                singleLine = true,
+                                textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
+                                cursorBrush = SolidColor(Color.White),
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
 
-                    // 2. 敲击震动强度
+                    // 3. 敲击震动强度
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -145,8 +141,14 @@ fun SettingsContent(
                             )
                         )
                     }
+                }
 
-                    // 3. 全屏敲击模式
+                // 右侧列：全屏敲击 + 统计清零 + 随喜赞助
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // 4. 全屏敲击模式
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -168,7 +170,7 @@ fun SettingsContent(
                         )
                     }
 
-                    // 4. 统计清零
+                    // 5. 统计清零
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -186,79 +188,8 @@ fun SettingsContent(
                             Text(text = "清零", color = Color(0xFFFF5252), fontSize = 13.sp)
                         }
                     }
-                }
 
-                // 右侧列：BGM管理 + 随喜赞助
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    // BGM选择与音量
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "背景音乐", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                FilledTonalButton(
-                                    onClick = onPickBgm,
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = Color(0xFF333333),
-                                        contentColor = Color.White
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = if (state.customBgmUri == null) "选择音乐" else "更换音乐",
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                if (state.customBgmUri != null) {
-                                    OutlinedButton(
-                                        onClick = onClearBgm,
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Text(text = "清除", fontSize = 12.sp)
-                                    }
-                                }
-                            }
-                        }
-                        Text(
-                            text = if (state.customBgmUri != null) {
-                                "当前：${state.customBgmTitle ?: "已选择本地音频"}"
-                            } else {
-                                "未设置（可自选任意音频循环播放）"
-                            },
-                            fontSize = 12.sp,
-                            color = if (state.customBgmUri != null) Color.White else Color.Gray,
-                            maxLines = 1
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = "背景音乐音量", fontSize = 14.sp, color = Color.White)
-                            Text(text = "${(state.bgmVolume * 100).toInt()}%", fontSize = 14.sp, color = Color.Gray)
-                        }
-                        Slider(
-                            value = state.bgmVolume,
-                            onValueChange = onVolumeChange,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color(0xFF333333)
-                            )
-                        )
-                    }
-
-                    // 随喜赞助
+                    // 6. 随喜赞助
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -283,7 +214,7 @@ fun SettingsContent(
                         }
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(text = "💖 随喜赞助", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text(text = "若正念木鱼对您有所助益，欢迎自愿赞助支持持续维护更新", fontSize = 11.5.sp, color = Color.Gray, lineHeight = 16.sp)
+                            Text(text = "若正念对您有所助益，欢迎自愿赞助支持持续维护更新", fontSize = 11.5.sp, color = Color.Gray, lineHeight = 16.sp)
                             Text(text = "微信扫一扫 · 感恩有您 🙏", fontSize = 11.sp, color = Color.LightGray)
                         }
                     }
@@ -291,6 +222,7 @@ fun SettingsContent(
             }
         }
     } else {
+        // 竖屏 AlertDialog
         AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = Color(0xFF1E1E1E),
@@ -308,109 +240,36 @@ fun SettingsContent(
                         .padding(top = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
-                    // 1. 运行模式切换 (木鱼 / 节拍器 / 电子鼓 / 番茄钟)
+                    // 1. 显示文案自定义 (纯输入框，去除标签选择)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "运行模式", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                        val modeChunks = AppMode.entries.chunked(2)
-                        modeChunks.forEach { rowModes ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                rowModes.forEach { mode ->
-                                    val isSelected = state.currentMode == mode
-                                    Surface(
-                                        onClick = { onModeChange(mode) },
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0x26FFFFFF) else Color(0xFF282828),
-                                        border = if (isSelected) BorderStroke(1.2.dp, Color.White) else null,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.padding(vertical = 10.dp)
-                                        ) {
-                                            Text(
-                                                text = mode.displayName.replace("模式", ""),
-                                                fontSize = 13.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 2. 本地背景音乐选择与管理
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Text(text = "显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .border(1.dp, Color(0xFF444444), RoundedCornerShape(8.dp))
+                                .background(Color(0xFF242424), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            Text(text = "背景音乐", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                FilledTonalButton(
-                                    onClick = onPickBgm,
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = Color(0xFF333333),
-                                        contentColor = Color.White
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = if (state.customBgmUri == null) "选择音乐" else "更换音乐",
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                if (state.customBgmUri != null) {
-                                    OutlinedButton(
-                                        onClick = onClearBgm,
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Text(text = "清除", fontSize = 12.sp)
-                                    }
-                                }
+                            if (subtitleInput.isEmpty()) {
+                                Text("例如：正念、功德、专注、节拍", fontSize = 13.sp, color = Color(0xFF666666))
                             }
-                        }
-                        Text(
-                            text = if (state.customBgmUri != null) {
-                                "当前：${state.customBgmTitle ?: "已选择本地音频"}"
-                            } else {
-                                "未设置（可自选手机内任意音频循环播放）"
-                            },
-                            fontSize = 12.sp,
-                            color = if (state.customBgmUri != null) Color.White else Color.Gray,
-                            maxLines = 1
-                        )
-                    }
-
-                    // 3. 背景音乐音量调节滑块
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = "背景音乐音量", fontSize = 14.sp)
-                            Text(text = "${(state.bgmVolume * 100).toInt()}%", fontSize = 14.sp, color = Color.Gray)
-                        }
-                        Slider(
-                            value = state.bgmVolume,
-                            onValueChange = onVolumeChange,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color(0xFF333333)
+                            BasicTextField(
+                                value = subtitleInput,
+                                onValueChange = {
+                                    subtitleInput = it
+                                    onSubtitleChange(it)
+                                },
+                                singleLine = true,
+                                textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
+                                cursorBrush = SolidColor(Color.White),
+                                modifier = Modifier.fillMaxWidth()
                             )
-                        )
+                        }
                     }
 
-                    // 4. 敲击震动强度调节滑块 (0~500ms，默认120ms，位于背景音乐下方)
+                    // 3. 敲击震动强度
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -438,7 +297,7 @@ fun SettingsContent(
                         )
                     }
 
-                    // 5. 全屏敲击模式
+                    // 4. 全屏敲击模式
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -460,7 +319,7 @@ fun SettingsContent(
                         )
                     }
 
-                    // 6. 统计清零
+                    // 5. 统计清零
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -471,10 +330,7 @@ fun SettingsContent(
                             Text(text = "重置已敲击的计数总数", fontSize = 12.sp, color = Color.Gray)
                         }
                         Button(
-                            onClick = {
-                                onResetCount()
-                                onDismiss()
-                            },
+                            onClick = onResetCount,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A1D1D)),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -482,34 +338,25 @@ fun SettingsContent(
                         }
                     }
 
-                    // 7. 随喜赞助 (微信收款码，完全自愿)
+                    // 6. 随喜赞助
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .background(Color(0xFF262626), RoundedCornerShape(12.dp))
+                            .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        HorizontalDivider(color = Color(0xFF333333), thickness = 0.8.dp)
-
+                        Text(text = "💖 随喜赞助", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
-                            text = "💖 随喜赞助",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White
-                        )
-
-                        Text(
-                            text = "若正念木鱼对您的静心有所助益，欢迎自愿随喜赞助支持软件持续维护与更新：",
+                            text = "若正念对您有所助益，欢迎自愿赞助支持持续维护更新",
                             fontSize = 12.sp,
                             color = Color.Gray,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 18.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                            textAlign = TextAlign.Center
                         )
 
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             color = Color.White,
                             modifier = Modifier.padding(vertical = 4.dp)
                         ) {
@@ -546,25 +393,18 @@ fun SettingsDialog(
     state: WoodenFishUiState,
     isLandscape: Boolean = false,
     onDismiss: () -> Unit,
-    onModeChange: (AppMode) -> Unit,
-    onVolumeChange: (Float) -> Unit,
+    onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
     onFullScreenTapChange: (Boolean) -> Unit,
-    onResetCount: () -> Unit,
-    onPickBgm: () -> Unit,
-    onClearBgm: () -> Unit
+    onResetCount: () -> Unit
 ) {
     SettingsContent(
         state = state,
         isLandscape = isLandscape,
         onDismiss = onDismiss,
-        onModeChange = onModeChange,
-        onVolumeChange = onVolumeChange,
+        onSubtitleChange = onSubtitleChange,
         onVibrationChange = onVibrationChange,
         onFullScreenTapChange = onFullScreenTapChange,
-        onResetCount = onResetCount,
-        onPickBgm = onPickBgm,
-        onClearBgm = onClearBgm
+        onResetCount = onResetCount
     )
 }
-
