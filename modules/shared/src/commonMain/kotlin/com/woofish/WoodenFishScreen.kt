@@ -1575,6 +1575,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 onParsePomodoroSeq = { seq ->
                     viewModel.parsePomodoroSequence(seq)
                 },
+                onTogglePomodoroSound = { viewModel.togglePomodoroSound() },
                 onTempoPresetClick = { label, bpm ->
                     viewModel.onTempoPresetClick(label, bpm)
                 },

@@ -40,6 +40,7 @@ fun AutoKnockDialog(
     onPomodoroPresetClick: (String, List<Int>) -> Unit = { _, _ -> },
     onPomodoroCustomSeqChange: (String) -> Unit = {},
     onParsePomodoroSeq: (String) -> List<Int> = { listOf(25) },
+    onTogglePomodoroSound: () -> Unit = {},
     onTempoPresetClick: (String, Int) -> Unit = { _, bpm -> onBpmChange(bpm) },
     onTempoCustomClick: () -> Unit = {},
     onSetCustomBpm: (Int) -> Unit = onBpmChange
@@ -256,6 +257,36 @@ fun AutoKnockDialog(
                                     text = "预览规划 (共 ${totalMinutes} 分钟)：$previewStr",
                                     fontSize = 11.5.sp,
                                     color = Color.LightGray
+                                )
+                            }
+                        }
+
+                        // 4. 专注走针音效开关 (移至番茄钟专注设置)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF242424),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "🔊 专注时钟滴答音", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(text = "倒计时进行时播放轻柔秒针走动声", fontSize = 12.sp, color = Color.Gray)
+                                }
+                                Switch(
+                                    checked = state.isPomodoroSoundEnabled,
+                                    onCheckedChange = { onTogglePomodoroSound() },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = Color(0xFF4CAF50),
+                                        uncheckedThumbColor = Color.Gray,
+                                        uncheckedTrackColor = Color(0xFF333333)
+                                    )
                                 )
                             }
                         }
@@ -495,14 +526,14 @@ fun AutoKnockDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(text = "⏱️ 定时停止倒计时", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(text = "⏱️ 自动敲击持续时间", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
                                         Text(
                                             text = if (state.isTimerEnabled) {
-                                                "已设定: ${state.timerDurationMinutes} 分钟 · 剩余: ${String.format("%02d:%02d", remM, remS)}"
+                                                "已设定: ${state.timerDurationMinutes} 分钟 · 剩余: ${String.format("%02d:%02d", remM, remS)} (该模式运行到时自动停止)"
                                             } else {
-                                                "未开启（开启后倒计时结束自动停止并播放三角铁清脆提示音）"
+                                                "未限制持续时间（持续自动运行，开启后可设定该模式敲击时长）"
                                             },
                                             fontSize = 12.sp,
                                             color = if (state.isTimerEnabled) Color.White else Color.Gray
@@ -708,6 +739,36 @@ fun AutoKnockDialog(
                                     text = "共 ${totalMinutes} 分钟: $previewStr",
                                     fontSize = 11.sp,
                                     color = Color.LightGray
+                                )
+                            }
+                        }
+
+                        // 4. 专注走针音效开关 (移至番茄钟专注设置)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF262626),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "🔊 专注时钟滴答音", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(text = "倒计时进行时播放轻柔秒针走动声", fontSize = 11.sp, color = Color.Gray)
+                                }
+                                Switch(
+                                    checked = state.isPomodoroSoundEnabled,
+                                    onCheckedChange = { onTogglePomodoroSound() },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = Color(0xFF4CAF50),
+                                        uncheckedThumbColor = Color.Gray,
+                                        uncheckedTrackColor = Color(0xFF333333)
+                                    )
                                 )
                             }
                         }
@@ -929,14 +990,14 @@ fun AutoKnockDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(text = "⏱️ 定时停止倒计时", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(text = "⏱️ 自动敲击持续时间", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
                                         Text(
                                             text = if (state.isTimerEnabled) {
-                                                "剩余: ${String.format("%02d:%02d", remM, remS)} (共${state.timerDurationMinutes}分)"
+                                                "剩余: ${String.format("%02d:%02d", remM, remS)} (共${state.timerDurationMinutes}分钟，到时自动停止)"
                                             } else {
-                                                "结束自动停止并响铃"
+                                                "未限制持续时间（持续自动运行，开启后定时停止）"
                                             },
                                             fontSize = 11.sp,
                                             color = if (state.isTimerEnabled) Color.White else Color.Gray

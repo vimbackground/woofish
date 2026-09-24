@@ -34,7 +34,7 @@ fun AudioSettingsDialog(
     onClearBgm: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onSoundIndexChange: (Int) -> Unit,
-    onTogglePomodoroSound: () -> Unit,
+    onTogglePomodoroSound: () -> Unit = {},
     onBpmChange: (Int) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -119,45 +119,24 @@ fun AudioSettingsDialog(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 1. 敲击音效选择（置于背景音乐上方）
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF222222),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                    // 1. 敲击音效选择（置于背景音乐上方，非番茄钟模式显示）
+                    if (state.currentMode != AppMode.POMODORO) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF222222),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "🔊 当前模式音效选择 (${state.currentMode.displayName})",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "🔊 当前模式音效选择 (${state.currentMode.displayName})",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
 
-                            if (state.currentMode == AppMode.POMODORO) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(text = "专注时钟滴答音", fontSize = 14.sp, color = Color.White)
-                                        Text(text = "专注倒计时时播放轻柔的秒针走动声", fontSize = 12.sp, color = Color.Gray)
-                                    }
-                                    Switch(
-                                        checked = state.isPomodoroSoundEnabled,
-                                        onCheckedChange = { onTogglePomodoroSound() },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = Color(0xFF4CAF50),
-                                            uncheckedThumbColor = Color.Gray,
-                                            uncheckedTrackColor = Color(0xFF333333)
-                                        )
-                                    )
-                                }
-                            } else {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -396,45 +375,24 @@ fun AudioSettingsDialog(
                         .padding(top = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 1. 敲击音效选择（置于背景音乐上方）
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF262626),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                    // 1. 敲击音效选择（置于背景音乐上方，非番茄钟模式显示）
+                    if (state.currentMode != AppMode.POMODORO) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF262626),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "🔊 模式音效选择 (${state.currentMode.displayName})",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = "🔊 模式音效选择 (${state.currentMode.displayName})",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
 
-                            if (state.currentMode == AppMode.POMODORO) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(text = "专注时钟滴答音", fontSize = 14.sp, color = Color.White)
-                                        Text(text = "倒计时进行时播放轻柔滴答声", fontSize = 11.sp, color = Color.Gray)
-                                    }
-                                    Switch(
-                                        checked = state.isPomodoroSoundEnabled,
-                                        onCheckedChange = { onTogglePomodoroSound() },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = Color(0xFF4CAF50),
-                                            uncheckedThumbColor = Color.Gray,
-                                            uncheckedTrackColor = Color(0xFF333333)
-                                        )
-                                    )
-                                }
-                            } else {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)

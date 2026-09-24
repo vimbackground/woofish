@@ -69,8 +69,26 @@ open class MainViewModel(
     private val initialCustomBpm: Int = prefs.getInt("key_custom_bpm", 60)
     private val initialTempoPreset: String = prefs.getString("key_tempo_active_preset", "") ?: ""
     private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
-    private val initialTimerEnabled: Boolean = prefs.getBoolean("key_timer_enabled", false)
-    private val initialTimerMinutes: Int = prefs.getInt("key_timer_duration_minutes", 15)
+    private fun getModeTimerDuration(mode: AppMode): Int {
+        val legacyMinutes = prefs.getInt("key_timer_duration_minutes", 15)
+        return if (mode != AppMode.POMODORO) {
+            prefs.getInt("key_timer_duration_${mode.id}", legacyMinutes)
+        } else {
+            legacyMinutes
+        }
+    }
+
+    private fun getModeTimerEnabled(mode: AppMode): Boolean {
+        val legacyEnabled = prefs.getBoolean("key_timer_enabled", false)
+        return if (mode != AppMode.POMODORO) {
+            prefs.getBoolean("key_timer_enabled_${mode.id}", legacyEnabled)
+        } else {
+            false
+        }
+    }
+
+    private val initialTimerEnabled: Boolean = getModeTimerEnabled(initialMode)
+    private val initialTimerMinutes: Int = getModeTimerDuration(initialMode)
     private val savedPomodoroSeq: String? = prefs.getString("key_pomodoro_custom_sequence_v2", null)
         ?: prefs.getString("key_pomodoro_custom_sequence", null)?.takeIf {
             it !in listOf("15+5", "25+5", "45+15", "50+10", "15+5分钟", "25+5分钟")
@@ -147,14 +165,19 @@ open class MainViewModel(
 
         if (mode != AppMode.POMODORO) {
             stopPomodoro()
-        } else {
-            toggleAutoKnock(false)
         }
+        toggleAutoKnock(false)
+
+        val newTimerDuration = getModeTimerDuration(mode)
+        val newTimerEnabled = getModeTimerEnabled(mode)
 
         _uiState.value = _uiState.value.copy(
             currentMode = mode,
             soundIndex = savedSoundIndex.coerceIn(0, (mode.soundNames.size - 1).coerceAtLeast(0)),
-            subtitle = newSubtitle
+            subtitle = newSubtitle,
+            timerDurationMinutes = newTimerDuration,
+            timerRemainingSeconds = newTimerDuration * 60L,
+            isTimerEnabled = newTimerEnabled
         )
         prefs.putString("key_mode", mode.id)
         prefs.putString("key_subtitle", newSubtitle)
@@ -344,6 +367,7 @@ open class MainViewModel(
     }
 
     fun toggleTimer(enabled: Boolean) {
+        val mode = _uiState.value.currentMode
         _uiState.value = _uiState.value.copy(
             isTimerEnabled = enabled,
             timerRemainingSeconds = if (enabled && _uiState.value.timerRemainingSeconds <= 0L) {
@@ -353,6 +377,9 @@ open class MainViewModel(
             }
         )
         prefs.putBoolean("key_timer_enabled", enabled)
+        if (mode != AppMode.POMODORO) {
+            prefs.putBoolean("key_timer_enabled_${mode.id}", enabled)
+        }
 
         if (enabled && _uiState.value.isAutoKnockEnabled) {
             startTimerCountdown()
@@ -363,11 +390,15 @@ open class MainViewModel(
 
     fun setTimerDuration(minutes: Int) {
         val safeMinutes = minutes.coerceIn(1, 180)
+        val mode = _uiState.value.currentMode
         _uiState.value = _uiState.value.copy(
             timerDurationMinutes = safeMinutes,
             timerRemainingSeconds = safeMinutes * 60L
         )
         prefs.putInt("key_timer_duration_minutes", safeMinutes)
+        if (mode != AppMode.POMODORO) {
+            prefs.putInt("key_timer_duration_${mode.id}", safeMinutes)
+        }
 
         if (_uiState.value.isTimerEnabled && _uiState.value.isAutoKnockEnabled) {
             startTimerCountdown()
