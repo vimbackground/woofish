@@ -8,4 +8,10 @@
     <path
         android:pathData="M0,0h108v108h-108z"
         android:fillColor="#111111" />
+    <!-- 浅灰色外边缘边框（避免与黑色手机壁纸融合） -->
+    <path
+        android:pathData="M1.5,1.5 h105 v105 h-105 Z"
+        android:strokeColor="#707070"
+        android:strokeWidth="3"
+        android:fillColor="#00000000" />
 </vector>

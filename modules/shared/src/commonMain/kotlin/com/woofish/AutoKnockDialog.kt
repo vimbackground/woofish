@@ -64,29 +64,25 @@ fun AutoKnockDialog(
         parsedStages.sum()
     }
 
+    val strings = LocalAppStrings.current
     val intervalSec = 60f / state.bpm.coerceAtLeast(1)
-    val titleText = when (state.currentMode) {
-        AppMode.WOODEN_FISH -> "木鱼节奏设置"
-        AppMode.METRONOME -> "节拍器节奏设置"
-        AppMode.DRUM -> "电子鼓节奏设置"
-        AppMode.POMODORO -> "番茄钟专注设置"
+    val titleText = strings.rhythmSettingTitle(state.currentMode.getLocalizedDisplayName(strings))
+
+    val tempoPresets = remember(state.currentMode, strings) {
+        state.currentMode.getLocalizedTempoPresets(strings)
     }
 
-    val tempoPresets = remember(state.currentMode) {
-        state.currentMode.getTempoPresets()
-    }
-
-    val pomodoroPresets = remember {
+    val pomodoroPresets = remember(strings) {
         listOf(
-            "2分钟" to listOf(2),
-            "1+1分钟" to listOf(1, 1),
-            "15+5分钟" to listOf(15, 5),
-            "5分钟" to listOf(5),
-            "4+1分钟" to listOf(4, 1),
-            "25+5分钟" to listOf(25, 5),
-            "8分钟" to listOf(8),
-            "6+2分钟" to listOf(6, 2),
-            "50+10分钟" to listOf(50, 10)
+            "2${strings.minuteUnit}" to listOf(2),
+            "1+1${strings.minuteUnit}" to listOf(1, 1),
+            "15+5${strings.minuteUnit}" to listOf(15, 5),
+            "5${strings.minuteUnit}" to listOf(5),
+            "4+1${strings.minuteUnit}" to listOf(4, 1),
+            "25+5${strings.minuteUnit}" to listOf(25, 5),
+            "8${strings.minuteUnit}" to listOf(8),
+            "6+2${strings.minuteUnit}" to listOf(6, 2),
+            "50+10${strings.minuteUnit}" to listOf(50, 10)
         )
     }
 
@@ -108,7 +104,7 @@ fun AutoKnockDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("← 返回", color = Color(0xFFB0B0B0), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.back, color = Color(0xFFB0B0B0), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(text = titleText, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
                 }
@@ -117,7 +113,7 @@ fun AutoKnockDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(text = "完成", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = strings.done, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
 
@@ -142,15 +138,15 @@ fun AutoKnockDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "开启番茄钟倒计时", fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(text = strings.enablePomodoroCountdown, fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 val remM = state.pomodoroRemainingSeconds / 60
                                 val remS = state.pomodoroRemainingSeconds % 60
                                 val timeStr = String.format("%02d:%02d", remM, remS)
                                 Text(
                                     text = if (state.isPomodoroRunning) {
-                                        "专注中 · 阶段 ${state.currentPomodoroStageIndex + 1}/${state.pomodoroStages.size} · 剩余 $timeStr"
+                                        strings.pomodoroRunningStatus(state.currentPomodoroStageIndex + 1, state.pomodoroStages.size, timeStr)
                                     } else {
-                                        "已暂停 · 当前阶段剩余 $timeStr"
+                                        strings.pomodoroPausedStatus(timeStr)
                                     },
                                     fontSize = 12.sp,
                                     color = if (state.isPomodoroRunning) Color.White else Color(0xFF888888)
@@ -170,7 +166,7 @@ fun AutoKnockDialog(
 
                         // 2. 常用时长预设 (3x3 矩阵)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(text = "预设专注时长", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.presetFocusDuration, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             val chunks = pomodoroPresets.chunked(3)
                             chunks.forEach { rowPresets ->
                                 Row(
@@ -218,8 +214,8 @@ fun AutoKnockDialog(
                                 modifier = Modifier.padding(14.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Text(text = "自定义倒计时规划", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text(text = "支持多阶段连续倒计时（用 + 连接，例如 25+5 或 45+15+30）：", fontSize = 12.sp, color = Color.Gray)
+                                Text(text = strings.customPomodoroDialogTitle, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(text = strings.customPomodoroDialogDesc, fontSize = 12.sp, color = Color.Gray)
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -249,88 +245,16 @@ fun AutoKnockDialog(
                                         shape = RoundedCornerShape(8.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                                     ) {
-                                        Text(text = "规划启动", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text(text = strings.startPlan, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     }
                                 }
 
-                                val previewStr = parsedStages.mapIndexed { idx, m -> "阶段${idx + 1}: ${m}分" }.joinToString(" ➔ ")
+                                val previewStr = parsedStages.mapIndexed { idx, m -> strings.stageLabel(idx + 1, parsedStages.size, m) }.joinToString(" ➔ ")
                                 Text(
-                                    text = "预览规划 (共 ${totalMinutes} 分钟)：$previewStr",
+                                    text = strings.planPreview(totalMinutes, previewStr),
                                     fontSize = 11.5.sp,
                                     color = Color.LightGray
                                 )
-                            }
-                        }
-
-                        // 4. 专注音效设置 (移至番茄钟专注设置)
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF242424),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                        Text(text = "🔊 专注音效", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                        val soundSubtitle = if (state.isPomodoroSoundEnabled) {
-                                            when (state.soundIndex) {
-                                                1 -> "倒计时进行时播放平稳舒适的专注白噪音"
-                                                2 -> "倒计时进行时播放真实舒缓的自然淅沥雨声"
-                                                else -> "倒计时进行时播放轻柔秒针走动声"
-                                            }
-                                        } else {
-                                            "未开启专注音效（静音专注）"
-                                        }
-                                        Text(text = soundSubtitle, fontSize = 12.sp, color = Color.Gray)
-                                    }
-                                    Switch(
-                                        checked = state.isPomodoroSoundEnabled,
-                                        onCheckedChange = { onTogglePomodoroSound() },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = Color(0xFF4CAF50),
-                                            uncheckedThumbColor = Color.Gray,
-                                            uncheckedTrackColor = Color(0xFF333333)
-                                        )
-                                    )
-                                }
-
-                                AnimatedVisibility(visible = state.isPomodoroSoundEnabled, modifier = Modifier.fillMaxWidth()) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        state.currentMode.soundNames.forEachIndexed { index, name ->
-                                            val isSelected = state.soundIndex == index
-                                            Surface(
-                                                onClick = { onSoundIndexChange(index) },
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF2A2A2A),
-                                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Box(
-                                                    contentAlignment = Alignment.Center,
-                                                    modifier = Modifier.padding(vertical = 8.dp)
-                                                ) {
-                                                    Text(
-                                                        text = name,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
@@ -354,9 +278,9 @@ fun AutoKnockDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "自动连续节奏", fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(text = strings.autoContinuousRhythm, fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    text = if (state.isAutoKnockEnabled) "运行中 · 间隔 ${String.format("%.2f", intervalSec)} 秒" else "已暂停",
+                                    text = if (state.isAutoKnockEnabled) strings.runningInterval(String.format("%.2f", intervalSec)) else strings.paused,
                                     fontSize = 12.sp,
                                     color = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
                                 )
@@ -375,7 +299,7 @@ fun AutoKnockDialog(
 
                         // 2. 自动节奏预设按钮 (5个常规预设 + 1个自定义按钮)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(text = "自动节奏预设", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.presetRhythm, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             
                             // 第一排 (前3个预设)
                             Row(
@@ -443,7 +367,7 @@ fun AutoKnockDialog(
                                 }
 
                                 // 自定义按钮
-                                val isCustomSelected = state.tempoActivePreset == "自定义"
+                                val isCustomSelected = state.tempoActivePreset == "自定义" || state.tempoActivePreset == strings.custom
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (isCustomSelected) Color(0x33FFFFFF) else Color(0xFF262626),
@@ -473,7 +397,7 @@ fun AutoKnockDialog(
                                         modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp)
                                     ) {
                                         Text(
-                                            text = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义",
+                                            text = if (isCustomSelected) "${strings.custom} ${state.customBpm}" else strings.custom,
                                             fontSize = if (isCustomSelected) 11.5.sp else 12.sp,
                                             fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
@@ -491,9 +415,9 @@ fun AutoKnockDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "自动节奏频率", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                                Text(text = strings.tempoFrequency, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                                 Text(
-                                    text = "${state.bpm} BPM (${String.format("%.2f", intervalSec)} 秒/次)",
+                                    text = "${state.bpm} BPM (${strings.intervalSeconds(String.format("%.2f", intervalSec))})",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -569,14 +493,14 @@ fun AutoKnockDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                        Text(text = "⏱️ 自动敲击持续时间", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(text = strings.autoKnockDuration, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
                                         Text(
                                             text = if (state.isTimerEnabled) {
-                                                "已设定: ${state.timerDurationMinutes} 分钟 · 剩余: ${String.format("%02d:%02d", remM, remS)} (该模式运行到时自动停止)"
+                                                strings.countdownActive(String.format("%02d:%02d", remM, remS))
                                             } else {
-                                                "未限制持续时间（持续自动运行，开启后可设定该模式敲击时长）"
+                                                strings.unlimitedContinuous
                                             },
                                             fontSize = 12.sp,
                                             color = if (state.isTimerEnabled) Color.White else Color.Gray
@@ -615,7 +539,7 @@ fun AutoKnockDialog(
                                                         modifier = Modifier.padding(vertical = 8.dp)
                                                     ) {
                                                         Text(
-                                                            text = "${mins}分",
+                                                            text = "${mins}${strings.minuteUnit}",
                                                             fontSize = 12.sp,
                                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0)
                                                         )
@@ -707,15 +631,15 @@ fun AutoKnockDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "开启番茄钟倒计时", fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(text = strings.enablePomodoroCountdown, fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 val remM = state.pomodoroRemainingSeconds / 60
                                 val remS = state.pomodoroRemainingSeconds % 60
                                 val timeStr = String.format("%02d:%02d", remM, remS)
                                 Text(
                                     text = if (state.isPomodoroRunning) {
-                                        "专注中 · 阶段 ${state.currentPomodoroStageIndex + 1}/${state.pomodoroStages.size} · 剩余 $timeStr"
+                                        strings.pomodoroRunningStatus(state.currentPomodoroStageIndex + 1, state.pomodoroStages.size, timeStr)
                                     } else {
-                                        "已暂停 · 当前阶段剩余 $timeStr"
+                                        strings.pomodoroPausedStatus(timeStr)
                                     },
                                     fontSize = 12.sp,
                                     color = if (state.isPomodoroRunning) Color.White else Color(0xFF888888)
@@ -735,7 +659,7 @@ fun AutoKnockDialog(
 
                         // 2. 预设时长
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(text = "预设专注时长", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.presetFocusDuration, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             val chunks = pomodoroPresets.chunked(3)
                             chunks.forEach { rowPresets ->
                                 Row(
@@ -778,8 +702,8 @@ fun AutoKnockDialog(
                                 modifier = Modifier.padding(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(text = "自定义多阶段规划", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text(text = "用 + 连接，例如 25+5 或 45+15+30：", fontSize = 11.sp, color = Color.Gray)
+                                Text(text = strings.customPomodoroDialogTitle, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(text = strings.customPomodoroDialogDesc, fontSize = 11.sp, color = Color.Gray)
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -810,88 +734,16 @@ fun AutoKnockDialog(
                                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                     ) {
-                                        Text(text = "设定", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text(text = strings.setButton, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     }
                                 }
 
-                                val previewStr = parsedStages.mapIndexed { idx, m -> "阶段${idx + 1}: ${m}分" }.joinToString(" ➔ ")
+                                val previewStr = parsedStages.mapIndexed { idx, m -> strings.stageLabel(idx + 1, parsedStages.size, m) }.joinToString(" ➔ ")
                                 Text(
-                                    text = "共 ${totalMinutes} 分钟: $previewStr",
+                                    text = strings.planPreview(totalMinutes, previewStr),
                                     fontSize = 11.sp,
                                     color = Color.LightGray
                                 )
-                            }
-                        }
-
-                        // 4. 专注音效设置 (移至番茄钟专注设置)
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF262626),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                        Text(text = "🔊 专注音效", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                        val soundSubtitle = if (state.isPomodoroSoundEnabled) {
-                                            when (state.soundIndex) {
-                                                1 -> "倒计时进行时播放平稳舒适的专注白噪音"
-                                                2 -> "倒计时进行时播放真实舒缓的自然淅沥雨声"
-                                                else -> "倒计时进行时播放轻柔秒针走动声"
-                                            }
-                                        } else {
-                                            "未开启专注音效（静音专注）"
-                                        }
-                                        Text(text = soundSubtitle, fontSize = 11.sp, color = Color.Gray)
-                                    }
-                                    Switch(
-                                        checked = state.isPomodoroSoundEnabled,
-                                        onCheckedChange = { onTogglePomodoroSound() },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = Color(0xFF4CAF50),
-                                            uncheckedThumbColor = Color.Gray,
-                                            uncheckedTrackColor = Color(0xFF333333)
-                                        )
-                                    )
-                                }
-
-                                AnimatedVisibility(visible = state.isPomodoroSoundEnabled, modifier = Modifier.fillMaxWidth()) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        state.currentMode.soundNames.forEachIndexed { index, name ->
-                                            val isSelected = state.soundIndex == index
-                                            Surface(
-                                                onClick = { onSoundIndexChange(index) },
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF303030),
-                                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Box(
-                                                    contentAlignment = Alignment.Center,
-                                                    modifier = Modifier.padding(vertical = 8.dp)
-                                                ) {
-                                                    Text(
-                                                        text = name,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
                             }
                         }
                     } else {
@@ -902,9 +754,9 @@ fun AutoKnockDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "自动连续节奏", fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(text = strings.autoContinuousRhythm, fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    text = if (state.isAutoKnockEnabled) "运行中 · 间隔 ${String.format("%.2f", intervalSec)} 秒" else "已暂停",
+                                    text = if (state.isAutoKnockEnabled) strings.runningInterval(String.format("%.2f", intervalSec)) else strings.paused,
                                     fontSize = 12.sp,
                                     color = if (state.isAutoKnockEnabled) Color.White else Color(0xFF888888)
                                 )
@@ -923,7 +775,7 @@ fun AutoKnockDialog(
 
                         // 2. 自动节奏预设按钮 (5个常规预设 + 1个自定义按钮)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(text = "自动节奏预设", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.presetRhythm, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             
                             // 第一排 (前3个预设)
                             Row(
@@ -991,7 +843,7 @@ fun AutoKnockDialog(
                                 }
 
                                 // 自定义按钮
-                                val isCustomSelected = state.tempoActivePreset == "自定义"
+                                val isCustomSelected = state.tempoActivePreset == "自定义" || state.tempoActivePreset == strings.custom
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (isCustomSelected) Color(0x33FFFFFF) else Color(0xFF262626),
@@ -1021,7 +873,7 @@ fun AutoKnockDialog(
                                         modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp)
                                     ) {
                                         Text(
-                                            text = if (isCustomSelected) "自定义 ${state.customBpm}" else "自定义",
+                                            text = if (isCustomSelected) "${strings.custom} ${state.customBpm}" else strings.custom,
                                             fontSize = if (isCustomSelected) 11.5.sp else 12.sp,
                                             fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isCustomSelected) Color.White else Color(0xFFB0B0B0),
@@ -1039,9 +891,9 @@ fun AutoKnockDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "自动节奏频率", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                                Text(text = strings.tempoFrequency, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
                                 Text(
-                                    text = "${state.bpm} BPM (${String.format("%.2f", intervalSec)} 秒/次)",
+                                    text = "${state.bpm} BPM (${strings.intervalSeconds(String.format("%.2f", intervalSec))})",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -1112,14 +964,14 @@ fun AutoKnockDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                        Text(text = "⏱️ 自动敲击持续时间", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(text = strings.autoKnockDuration, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
                                         Text(
                                             text = if (state.isTimerEnabled) {
-                                                "剩余: ${String.format("%02d:%02d", remM, remS)} (共${state.timerDurationMinutes}分钟，到时自动停止)"
+                                                strings.countdownActive(String.format("%02d:%02d", remM, remS))
                                             } else {
-                                                "未限制持续时间（持续自动运行，开启后定时停止）"
+                                                strings.unlimitedContinuous
                                             },
                                             fontSize = 11.sp,
                                             color = if (state.isTimerEnabled) Color.White else Color.Gray
@@ -1157,7 +1009,7 @@ fun AutoKnockDialog(
                                                         modifier = Modifier.padding(vertical = 6.dp)
                                                     ) {
                                                         Text(
-                                                            text = "${mins}分",
+                                                            text = "${mins}${strings.minuteUnit}",
                                                             fontSize = 11.sp,
                                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0)
                                                         )
@@ -1223,7 +1075,7 @@ fun AutoKnockDialog(
             },
             confirmButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = "完成", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(text = strings.done, color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -1240,7 +1092,7 @@ fun AutoKnockDialog(
             containerColor = Color(0xFF262626),
             title = {
                 Text(
-                    text = "自定义节拍速度 (BPM)",
+                    text = strings.customBpmTitle,
                     fontSize = 18.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -1275,8 +1127,9 @@ fun AutoKnockDialog(
                             )
                         }
                         val interval = 60f / tempBpm
+                        val approxText = if (strings == StringsZh) "约 ${String.format("%.2f", interval)} 秒/拍 · 调节范围 30~300" else "approx ${String.format("%.2f", interval)} s/beat · Range 30~300"
                         Text(
-                            text = "约 ${String.format("%.2f", interval)} 秒/拍 · 调节范围 30~300",
+                            text = approxText,
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
@@ -1347,7 +1200,7 @@ fun AutoKnockDialog(
                                 }
                             }
                         },
-                        label = { Text("直接输入数值", color = Color.Gray, fontSize = 12.sp) },
+                        label = { Text(strings.directInputBpm, color = Color.Gray, fontSize = 12.sp) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         keyboardActions = KeyboardActions(
@@ -1376,12 +1229,12 @@ fun AutoKnockDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                 ) {
-                    Text(text = "开始", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(text = strings.start, color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCustomBpmDialog = false }) {
-                    Text(text = "取消", color = Color.Gray)
+                    Text(text = strings.cancel, color = Color.Gray)
                 }
             }
         )

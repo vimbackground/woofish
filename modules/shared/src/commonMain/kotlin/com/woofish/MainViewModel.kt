@@ -52,6 +52,7 @@ data class WoodenFishUiState(
     val tempoActivePreset: String = "", // 节奏模式当前选中的预设或"自定义"
     val customBpm: Int = 60, // 自定义独立BPM设置值
     val screenOrientation: ScreenOrientationSetting = ScreenOrientationSetting.AUTO, // 屏幕方向设置
+    val appLanguage: AppLanguage = AppLanguage.SYSTEM, // 软件多语言设置 (跟随系统/中文/英文)
     // 番茄钟专注模式专属状态
     val isPomodoroRunning: Boolean = false,
     val pomodoroStages: List<Int> = listOf(25),
@@ -110,6 +111,9 @@ open class MainViewModel(
         }
     private val initialPomodoroCustomSeq: String = savedPomodoroSeq?.ifBlank { "5+2+1" } ?: "5+2+1"
     private val initialPomodoroSound: Boolean = prefs.getBoolean("key_pomodoro_sound_enabled", true)
+    private val initialLanguage: AppLanguage = AppLanguage.fromId(
+        prefs.getString("key_app_language", AppLanguage.SYSTEM.id) ?: AppLanguage.SYSTEM.id
+    )
 
     private val _uiState = MutableStateFlow(
         WoodenFishUiState(
@@ -131,6 +135,7 @@ open class MainViewModel(
             tempoActivePreset = initialTempoPreset,
             customBpm = initialCustomBpm,
             screenOrientation = initialScreenOrientation,
+            appLanguage = initialLanguage,
             pomodoroCustomSequence = initialPomodoroCustomSeq,
             isPomodoroSoundEnabled = initialPomodoroSound
         )
@@ -253,6 +258,11 @@ open class MainViewModel(
     fun setScreenOrientation(setting: ScreenOrientationSetting) {
         _uiState.value = _uiState.value.copy(screenOrientation = setting)
         prefs.putString("key_screen_orientation", setting.id)
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        _uiState.value = _uiState.value.copy(appLanguage = language)
+        prefs.putString("key_app_language", language.id)
     }
 
     fun setBpm(newBpm: Int) {

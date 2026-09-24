@@ -33,9 +33,11 @@ fun SettingsContent(
     onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
     onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
+    onLanguageChange: (AppLanguage) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var subtitleInput by remember { mutableStateOf(state.subtitle) }
     LaunchedEffect(state.subtitle) {
         subtitleInput = state.subtitle
@@ -59,16 +61,16 @@ fun SettingsContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("← 返回", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.back, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text(text = "软件设置", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    Text(text = strings.settingsTitle, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
                 }
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(text = "完成", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = strings.done, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
 
@@ -81,14 +83,14 @@ fun SettingsContent(
                     .verticalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(36.dp)
             ) {
-                // 左侧列：文案设置 + 敲击震动
+                // 左侧列：文案设置 + 屏幕方向 + 语言选择 + 敲击震动
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 1. 显示文案自定义 (纯输入框，去除标签选择)
+                    // 1. 显示文案自定义
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(text = strings.displayText, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -99,7 +101,7 @@ fun SettingsContent(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (subtitleInput.isEmpty()) {
-                                Text("例如：正念、功德、专注、节拍", fontSize = 13.sp, color = Color(0xFF666666))
+                                Text(strings.displayTextPlaceholder, fontSize = 13.sp, color = Color(0xFF666666))
                             }
                             BasicTextField(
                                 value = subtitleInput,
@@ -117,13 +119,18 @@ fun SettingsContent(
 
                     // 2. 屏幕方向设置 (自动旋转 / 锁定竖屏 / 锁定横屏)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "屏幕方向", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(text = strings.screenOrientation, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             ScreenOrientationSetting.entries.forEach { setting ->
                                 val isSelected = state.screenOrientation == setting
+                                val label = when (setting) {
+                                    ScreenOrientationSetting.AUTO -> strings.orientationAuto
+                                    ScreenOrientationSetting.PORTRAIT -> strings.orientationPortrait
+                                    ScreenOrientationSetting.LANDSCAPE -> strings.orientationLandscape
+                                }
                                 Surface(
                                     onClick = { onOrientationChange(setting) },
                                     shape = RoundedCornerShape(8.dp),
@@ -138,7 +145,7 @@ fun SettingsContent(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
-                                            text = setting.displayName,
+                                            text = label,
                                             fontSize = 12.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0)
@@ -149,16 +156,55 @@ fun SettingsContent(
                         }
                     }
 
-                    // 3. 敲击震动强度 (范围 0~120ms，带两侧加减微调按钮)
+                    // 3. 语言设置 (跟随系统 / 中文 / English)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = strings.languageSetting, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppLanguage.entries.forEach { lang ->
+                                val isSelected = state.appLanguage == lang
+                                val label = when (lang) {
+                                    AppLanguage.SYSTEM -> strings.languageSystem
+                                    AppLanguage.ZH -> "中文"
+                                    AppLanguage.EN -> "English"
+                                }
+                                Surface(
+                                    onClick = { onLanguageChange(lang) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF242424),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) Color.White else Color(0xFF444444)
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 12.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 4. 敲击震动强度 (范围 0~120ms)
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "敲击震动强度", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.vibrationIntensity, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             Text(
-                                text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
+                                text = if (state.vibrationMs == 0) strings.vibrationOff else "${state.vibrationMs} ms",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (state.vibrationMs == 0) Color.Gray else Color.White
@@ -220,15 +266,15 @@ fun SettingsContent(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 4. 全屏敲击模式
+                    // 全屏敲击模式
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "全屏敲击模式", fontSize = 15.sp, color = Color.White)
-                            Text(text = "点击屏幕任意区域均可触发击打", fontSize = 12.sp, color = Color.Gray)
+                            Text(text = strings.fullScreenTap, fontSize = 15.sp, color = Color.White)
+                            Text(text = strings.fullScreenTapDesc, fontSize = 12.sp, color = Color.Gray)
                         }
                         Switch(
                             checked = state.isFullScreenTapEnabled,
@@ -242,26 +288,26 @@ fun SettingsContent(
                         )
                     }
 
-                    // 5. 统计清零
+                    // 统计清零
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "统计清零", fontSize = 15.sp, color = Color.White)
-                            Text(text = "重置已敲击的计数总数", fontSize = 12.sp, color = Color.Gray)
+                            Text(text = strings.totalKnocks, fontSize = 15.sp, color = Color.White)
+                            Text(text = "${state.count}", fontSize = 12.sp, color = Color.Gray)
                         }
                         Button(
                             onClick = onResetCount,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A1D1D)),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(text = "清零", color = Color(0xFFFF5252), fontSize = 13.sp)
+                            Text(text = strings.resetCount, color = Color(0xFFFF5252), fontSize = 13.sp)
                         }
                     }
 
-                    // 6. 随喜赞助
+                    // 随喜赞助
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -277,7 +323,7 @@ fun SettingsContent(
                         ) {
                             Image(
                                 painter = painterResource(Res.drawable.wepay),
-                                contentDescription = "微信赞助收款码",
+                                contentDescription = "赞助收款码",
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(4.dp)
@@ -285,9 +331,9 @@ fun SettingsContent(
                             )
                         }
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(text = "💖 随喜赞助", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text(text = "若正念对您有所助益，欢迎自愿赞助支持持续维护更新", fontSize = 11.5.sp, color = Color.Gray, lineHeight = 16.sp)
-                            Text(text = "微信扫一扫 · 感恩有您 🙏", fontSize = 11.sp, color = Color.LightGray)
+                            Text(text = strings.sponsor, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(text = strings.sponsorDesc, fontSize = 11.5.sp, color = Color.Gray, lineHeight = 16.sp)
+                            Text(text = strings.wechatPay, fontSize = 11.sp, color = Color.LightGray)
                         }
                     }
                 }
@@ -302,7 +348,7 @@ fun SettingsContent(
             textContentColor = Color(0xFFCCCCCC),
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text(text = "软件设置", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(text = strings.settingsTitle, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             },
             text = {
                 Column(
@@ -312,9 +358,9 @@ fun SettingsContent(
                         .padding(top = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
-                    // 1. 显示文案自定义 (纯输入框，去除标签选择)
+                    // 1. 显示文案自定义
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "显示文案", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(text = strings.displayText, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -325,7 +371,7 @@ fun SettingsContent(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (subtitleInput.isEmpty()) {
-                                Text("例如：正念、功德、专注、节拍", fontSize = 13.sp, color = Color(0xFF666666))
+                                Text(strings.displayTextPlaceholder, fontSize = 13.sp, color = Color(0xFF666666))
                             }
                             BasicTextField(
                                 value = subtitleInput,
@@ -343,13 +389,18 @@ fun SettingsContent(
 
                     // 2. 屏幕方向设置 (自动旋转 / 锁定竖屏 / 锁定横屏)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "屏幕方向", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Text(text = strings.screenOrientation, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             ScreenOrientationSetting.entries.forEach { setting ->
                                 val isSelected = state.screenOrientation == setting
+                                val label = when (setting) {
+                                    ScreenOrientationSetting.AUTO -> strings.orientationAuto
+                                    ScreenOrientationSetting.PORTRAIT -> strings.orientationPortrait
+                                    ScreenOrientationSetting.LANDSCAPE -> strings.orientationLandscape
+                                }
                                 Surface(
                                     onClick = { onOrientationChange(setting) },
                                     shape = RoundedCornerShape(8.dp),
@@ -364,7 +415,7 @@ fun SettingsContent(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
-                                            text = setting.displayName,
+                                            text = label,
                                             fontSize = 12.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isSelected) Color.White else Color(0xFFB0B0B0)
@@ -375,16 +426,55 @@ fun SettingsContent(
                         }
                     }
 
-                    // 3. 敲击震动强度 (范围 0~120ms，带两侧加减微调按钮)
+                    // 3. 语言设置 (跟随系统 / 中文 / English)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = strings.languageSetting, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppLanguage.entries.forEach { lang ->
+                                val isSelected = state.appLanguage == lang
+                                val label = when (lang) {
+                                    AppLanguage.SYSTEM -> strings.languageSystem
+                                    AppLanguage.ZH -> "中文"
+                                    AppLanguage.EN -> "English"
+                                }
+                                Surface(
+                                    onClick = { onLanguageChange(lang) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF242424),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) Color.White else Color(0xFF444444)
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 12.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 4. 敲击震动强度 (范围 0~120ms)
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "敲击震动强度", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                            Text(text = strings.vibrationIntensity, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
                             Text(
-                                text = if (state.vibrationMs == 0) "已关闭" else "${state.vibrationMs} ms",
+                                text = if (state.vibrationMs == 0) strings.vibrationOff else "${state.vibrationMs} ms",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (state.vibrationMs == 0) Color.Gray else Color.White
@@ -440,15 +530,15 @@ fun SettingsContent(
                         }
                     }
 
-                    // 4. 全屏敲击模式
+                    // 5. 全屏敲击模式
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "全屏敲击模式", fontSize = 15.sp, color = Color.White)
-                            Text(text = "点击屏幕任意区域均可触发击打", fontSize = 12.sp, color = Color.Gray)
+                            Text(text = strings.fullScreenTap, fontSize = 15.sp, color = Color.White)
+                            Text(text = strings.fullScreenTapDesc, fontSize = 12.sp, color = Color.Gray)
                         }
                         Switch(
                             checked = state.isFullScreenTapEnabled,
@@ -462,26 +552,26 @@ fun SettingsContent(
                         )
                     }
 
-                    // 5. 统计清零
+                    // 6. 统计清零
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "统计清零", fontSize = 15.sp, color = Color.White)
-                            Text(text = "重置已敲击的计数总数", fontSize = 12.sp, color = Color.Gray)
+                            Text(text = strings.totalKnocks, fontSize = 15.sp, color = Color.White)
+                            Text(text = "${state.count}", fontSize = 12.sp, color = Color.Gray)
                         }
                         Button(
                             onClick = onResetCount,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A1D1D)),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(text = "清零", color = Color(0xFFFF5252), fontSize = 13.sp)
+                            Text(text = strings.resetCount, color = Color(0xFFFF5252), fontSize = 13.sp)
                         }
                     }
 
-                    // 6. 随喜赞助
+                    // 7. 随喜赞助
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -490,9 +580,9 @@ fun SettingsContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(text = "💖 随喜赞助", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(text = strings.sponsor, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
-                            text = "若正念对您有所助益，欢迎自愿赞助支持持续维护更新",
+                            text = strings.sponsorDesc,
                             fontSize = 12.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
@@ -505,7 +595,7 @@ fun SettingsContent(
                         ) {
                             Image(
                                 painter = painterResource(Res.drawable.wepay),
-                                contentDescription = "微信赞助收款码",
+                                contentDescription = "赞助收款码",
                                 modifier = Modifier
                                     .size(160.dp)
                                     .padding(8.dp)
@@ -514,7 +604,7 @@ fun SettingsContent(
                         }
 
                         Text(
-                            text = "微信扫一扫 · 随喜随缘 · 感恩有您 🙏",
+                            text = strings.wechatPay,
                             fontSize = 11.5.sp,
                             color = Color.LightGray,
                             textAlign = TextAlign.Center
@@ -524,7 +614,7 @@ fun SettingsContent(
             },
             confirmButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = "确定", color = Color.White)
+                    Text(text = strings.done, color = Color.White)
                 }
             }
         )
@@ -539,6 +629,7 @@ fun SettingsDialog(
     onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
     onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
+    onLanguageChange: (AppLanguage) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit
 ) {
@@ -549,6 +640,7 @@ fun SettingsDialog(
         onSubtitleChange = onSubtitleChange,
         onVibrationChange = onVibrationChange,
         onOrientationChange = onOrientationChange,
+        onLanguageChange = onLanguageChange,
         onFullScreenTapChange = onFullScreenTapChange,
         onResetCount = onResetCount
     )

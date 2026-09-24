@@ -35,8 +35,9 @@ fun AudioSettingsDialog(
     onVolumeChange: (Float) -> Unit,
     onSoundIndexChange: (Int) -> Unit,
     onTogglePomodoroSound: () -> Unit = {},
-    onBpmChange: (Int) -> Unit
+    onBpmChange: (Int) -> Unit = {}
 ) {
+    val strings = LocalAppStrings.current
     val coroutineScope = rememberCoroutineScope()
 
     // 智能环境音乐节奏侦测器
@@ -89,9 +90,9 @@ fun AudioSettingsDialog(
                         beatDetector.stop()
                         onDismiss()
                     }) {
-                        Text("← 返回", color = Color(0xFFB0B0B0), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.back, color = Color(0xFFB0B0B0), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text(text = "声音设置", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    Text(text = strings.audioSettingsTitle, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
                 }
                 Button(
                     onClick = {
@@ -101,7 +102,7 @@ fun AudioSettingsDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(text = "完成", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = strings.done, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
 
@@ -130,7 +131,7 @@ fun AudioSettingsDialog(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "🔊 当前模式音效选择 (${state.currentMode.displayName})",
+                                text = strings.currentModeSoundTitle(state.currentMode.getLocalizedDisplayName(strings)),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -140,7 +141,7 @@ fun AudioSettingsDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                state.currentMode.soundNames.forEachIndexed { index, name ->
+                                state.currentMode.getLocalizedSoundNames(strings).forEachIndexed { index, name ->
                                     val isSelected = state.soundIndex == index
                                     Surface(
                                         onClick = { onSoundIndexChange(index) },
@@ -187,16 +188,18 @@ fun AudioSettingsDialog(
                                     tint = if (state.isBgmPlaying) Color.White else Color(0xFF888888),
                                     modifier = Modifier.size(20.dp)
                                 )
-                                Text(text = "背景音乐", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(text = strings.bgmTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
 
                             // 当前曲目说明
                             Text(
                                 text = if (state.customBgmUri != null) {
-                                    val status = if (state.isBgmPlaying) "正在循环播放" else "已暂停"
-                                    "当前曲目：${state.customBgmTitle ?: "本地音频"} ($status)"
+                                    val status = if (state.isBgmPlaying) strings.bgmStatusPlaying else strings.bgmStatusPaused
+                                    val prefix = if (strings == StringsZh) "当前曲目：" else "Track: "
+                                    val defaultName = if (strings == StringsZh) "本地音频" else "Local Audio"
+                                    "$prefix${state.customBgmTitle ?: defaultName} ($status)"
                                 } else {
-                                    "未选择背景音乐（可选择手机内任意音频循环播放）"
+                                    if (strings == StringsZh) "未选择背景音乐（可选择手机内任意音频循环播放）" else "No background music selected (loop any audio file)"
                                 },
                                 fontSize = 12.sp,
                                 color = if (state.customBgmUri != null) Color(0xFFB0B0B0) else Color(0xFF777777),
@@ -224,7 +227,7 @@ fun AudioSettingsDialog(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
-                                        text = if (state.customBgmUri == null) "选择音乐" else if (state.isBgmPlaying) "⏸️ 暂停" else "▶️ 播放",
+                                        text = if (state.customBgmUri == null) strings.selectMusic else if (state.isBgmPlaying) "⏸️ ${strings.pause}" else "▶️ ${strings.play}",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -240,7 +243,7 @@ fun AudioSettingsDialog(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
-                                        Text(text = "更换", fontSize = 12.sp)
+                                        Text(text = if (strings == StringsZh) "更换" else "Change", fontSize = 12.sp)
                                     }
 
                                     OutlinedButton(
@@ -249,7 +252,7 @@ fun AudioSettingsDialog(
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
-                                        Text(text = "清除", fontSize = 12.sp)
+                                        Text(text = strings.clearMusicShort, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -261,7 +264,7 @@ fun AudioSettingsDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "音乐音量", fontSize = 13.sp, color = Color.White)
+                                    Text(text = strings.bgmVolume, fontSize = 13.sp, color = Color.White)
                                     Text(text = "${(state.bgmVolume * 100).toInt()}%", fontSize = 13.sp, color = Color.Gray)
                                 }
                                 Row(
@@ -363,7 +366,7 @@ fun AudioSettingsDialog(
             textContentColor = Color(0xFFCCCCCC),
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text(text = "声音设置", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(text = strings.audioSettingsTitle, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             },
             text = {
                 Column(
@@ -384,7 +387,7 @@ fun AudioSettingsDialog(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
-                                text = "🔊 模式音效选择 (${state.currentMode.displayName})",
+                                text = strings.currentModeSoundTitle(state.currentMode.getLocalizedDisplayName(strings)),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -394,7 +397,7 @@ fun AudioSettingsDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                state.currentMode.soundNames.forEachIndexed { index, name ->
+                                state.currentMode.getLocalizedSoundNames(strings).forEachIndexed { index, name ->
                                     val isSelected = state.soundIndex == index
                                     Surface(
                                         onClick = { onSoundIndexChange(index) },
@@ -441,16 +444,17 @@ fun AudioSettingsDialog(
                                     tint = if (state.isBgmPlaying) Color.White else Color(0xFF888888),
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Text(text = "背景音乐", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(text = strings.bgmTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
 
                             // 当前曲目说明
                             Text(
                                 text = if (state.customBgmUri != null) {
-                                    val status = if (state.isBgmPlaying) "正在播放" else "已暂停"
-                                    "当前：${state.customBgmTitle ?: "本地音频"} · $status"
+                                    val status = if (state.isBgmPlaying) strings.bgmStatusPlaying else strings.bgmStatusPaused
+                                    val prefix = if (strings == StringsZh) "当前：" else "Track: "
+                                    "$prefix${state.customBgmTitle ?: strings.bgmLocalAudio} · $status"
                                 } else {
-                                    "未设置背景音乐（可自选手机音频）"
+                                    strings.bgmNotSet
                                 },
                                 fontSize = 12.sp,
                                 color = if (state.customBgmUri != null) Color(0xFFB0B0B0) else Color(0xFF777777),
@@ -478,7 +482,7 @@ fun AudioSettingsDialog(
                                     shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
-                                        text = if (state.customBgmUri == null) "选音乐" else if (state.isBgmPlaying) "⏸️ 暂停" else "▶️ 播放",
+                                        text = if (state.customBgmUri == null) strings.selectMusicShort else if (state.isBgmPlaying) "⏸️ ${strings.pause}" else "▶️ ${strings.play}",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -494,7 +498,7 @@ fun AudioSettingsDialog(
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
-                                        Text(text = "更换", fontSize = 11.sp)
+                                        Text(text = strings.changeMusic, fontSize = 11.sp)
                                     }
 
                                     OutlinedButton(
@@ -503,7 +507,7 @@ fun AudioSettingsDialog(
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
-                                        Text(text = "清除", fontSize = 11.sp)
+                                        Text(text = strings.clearMusicShort, fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -515,7 +519,7 @@ fun AudioSettingsDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "背景音乐音量", fontSize = 13.sp, color = Color.White)
+                                    Text(text = strings.bgmVolume, fontSize = 13.sp, color = Color.White)
                                     Text(text = "${(state.bgmVolume * 100).toInt()}%", fontSize = 13.sp, color = Color.Gray)
                                 }
                                 Row(
@@ -606,7 +610,7 @@ fun AudioSettingsDialog(
                         onDismiss()
                     }
                 ) {
-                    Text(text = "完成", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(text = strings.done, color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -623,6 +627,7 @@ private fun TempoSpeedTestContent(
     onTapRecord: () -> Unit,
     onBpmChange: (Int) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFF242424),
@@ -642,7 +647,7 @@ private fun TempoSpeedTestContent(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "🎵 音效测速与节奏侦测",
+                        text = strings.speedDetectionTitle,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -663,7 +668,7 @@ private fun TempoSpeedTestContent(
                     color = if (detectorState.isListening) Color(0xFF422020) else Color(0xFF333333)
                 ) {
                     Text(
-                        text = if (detectorState.isListening) "⏹️ 停止" else "🎙️ 听音测速",
+                        text = if (detectorState.isListening) strings.stopDetectionShort else strings.listenDetection,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (detectorState.isListening) Color(0xFFFF8A80) else Color(0xFFB0B0B0),
@@ -720,7 +725,7 @@ private fun TempoSpeedTestContent(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = if (detectorState.confidence > 0.4f) "置信度: 优" else "置信度: 良好",
+                                    text = if (detectorState.confidence > 0.4f) strings.confidenceHigh else strings.confidenceGood,
                                     fontSize = 11.sp,
                                     color = Color(0xFF888888)
                                 )
@@ -732,7 +737,7 @@ private fun TempoSpeedTestContent(
                                 color = Color.White
                             ) {
                                 Text(
-                                    text = "应用此速度",
+                                    text = strings.applySpeed,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.Black,
@@ -748,7 +753,7 @@ private fun TempoSpeedTestContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "跟随侦测自动同步 BPM", fontSize = 12.sp, color = Color.White)
+                        Text(text = strings.autoSyncBpm, fontSize = 12.sp, color = Color.White)
                         Switch(
                             checked = autoSyncTempo,
                             onCheckedChange = onAutoSyncChange,
@@ -770,7 +775,7 @@ private fun TempoSpeedTestContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (tapFeedbackBpm != null) "轻敲测得: ${tapFeedbackBpm} BPM" else "或跟随音乐节拍点击测速：",
+                    text = if (tapFeedbackBpm != null) strings.tapTempoResult(tapFeedbackBpm) else strings.tapTempoPrompt,
                     fontSize = 12.sp,
                     color = if (tapFeedbackBpm != null) Color.White else Color(0xFF888888)
                 )
@@ -781,7 +786,7 @@ private fun TempoSpeedTestContent(
                     color = Color(0xFF333333)
                 ) {
                     Text(
-                        text = "🖐️ 点击测速",
+                        text = strings.tapTempoButton,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFB0B0B0),
