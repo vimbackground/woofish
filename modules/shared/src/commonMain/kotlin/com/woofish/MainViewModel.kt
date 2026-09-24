@@ -187,14 +187,7 @@ open class MainViewModel(
         val currentMode = _uiState.value.currentMode
         val maxSounds = currentMode.soundNames.size
         val nextIndex = (_uiState.value.soundIndex + 1) % maxSounds
-        _uiState.value = _uiState.value.copy(soundIndex = nextIndex)
-        prefs.putInt("key_sound_${currentMode.id}", nextIndex)
-
-        val isAutoRunning = _uiState.value.isAutoKnockEnabled ||
-            (currentMode == AppMode.POMODORO && _uiState.value.isPomodoroRunning)
-        if (!isAutoRunning) {
-            audioPlayer.playHit(currentMode, nextIndex, isManual = true, vibrationMs = _uiState.value.vibrationMs)
-        }
+        setSoundIndex(nextIndex)
     }
 
     fun setSoundIndex(index: Int) {
@@ -202,6 +195,17 @@ open class MainViewModel(
         val safeIndex = index.coerceIn(0, (currentMode.soundNames.size - 1).coerceAtLeast(0))
         _uiState.value = _uiState.value.copy(soundIndex = safeIndex)
         prefs.putInt("key_sound_${currentMode.id}", safeIndex)
+
+        if (currentMode == AppMode.POMODORO && _uiState.value.isPomodoroRunning) {
+            if (_uiState.value.isPomodoroSoundEnabled) {
+                if (safeIndex != 0) {
+                    audioPlayer.startPomodoroLoop(safeIndex)
+                } else {
+                    audioPlayer.stopPomodoroLoop()
+                }
+            }
+            return
+        }
 
         val isAutoRunning = _uiState.value.isAutoKnockEnabled ||
             (currentMode == AppMode.POMODORO && _uiState.value.isPomodoroRunning)
@@ -450,14 +454,20 @@ open class MainViewModel(
 
     private fun runPomodoroTicker() {
         pomodoroJob?.cancel()
+        if (_uiState.value.isPomodoroSoundEnabled && _uiState.value.soundIndex != 0) {
+            audioPlayer.startPomodoroLoop(_uiState.value.soundIndex)
+        } else {
+            audioPlayer.stopPomodoroLoop()
+        }
         pomodoroJob = viewModelScope.launch {
             while (isActive) {
                 delay(1000L)
-                if (_uiState.value.isPomodoroSoundEnabled) {
+                if (_uiState.value.isPomodoroSoundEnabled && _uiState.value.soundIndex == 0) {
                     audioPlayer.playPomodoroTick()
                 }
                 val curRemaining = _uiState.value.pomodoroRemainingSeconds - 1L
                 if (curRemaining <= 0L) {
+                    audioPlayer.stopPomodoroLoop()
                     val nextStageIdx = _uiState.value.currentPomodoroStageIndex + 1
                     val allStages = _uiState.value.pomodoroStages
                     if (nextStageIdx < allStages.size) {
@@ -468,8 +478,11 @@ open class MainViewModel(
                             pomodoroRemainingSeconds = allStages[nextStageIdx] * 60L,
                             pomodoroStageFinishedTrigger = System.currentTimeMillis()
                         )
+                        if (_uiState.value.isPomodoroSoundEnabled && _uiState.value.soundIndex != 0) {
+                            audioPlayer.startPomodoroLoop(_uiState.value.soundIndex)
+                        }
                     } else {
-                        // 最后全部结束时：开启嘀嗒音响 3 声，不开启嘀嗒音（静音走针）时只响 1 声
+                        // 最后全部结束时：开启走针音响 3 声，不开启走针音（静音走针）时只响 1 声
                         if (_uiState.value.isPomodoroSoundEnabled) {
                             playTimerFinishedNotification()
                         } else {
@@ -498,6 +511,7 @@ open class MainViewModel(
 
     fun pausePomodoro() {
         pomodoroJob?.cancel()
+        audioPlayer.stopPomodoroLoop()
         _uiState.value = _uiState.value.copy(isPomodoroRunning = false)
     }
 
@@ -507,6 +521,7 @@ open class MainViewModel(
 
     fun resetPomodoro() {
         pomodoroJob?.cancel()
+        audioPlayer.stopPomodoroLoop()
         val stages = _uiState.value.pomodoroStages
         val stageIdx = _uiState.value.currentPomodoroStageIndex
         val currentStageMins = stages.getOrElse(stageIdx) { stages.firstOrNull() ?: 25 }
@@ -532,6 +547,13 @@ open class MainViewModel(
         val next = !_uiState.value.isPomodoroSoundEnabled
         _uiState.value = _uiState.value.copy(isPomodoroSoundEnabled = next)
         prefs.putBoolean("key_pomodoro_sound_enabled", next)
+        if (_uiState.value.isPomodoroRunning) {
+            if (next && _uiState.value.soundIndex != 0) {
+                audioPlayer.startPomodoroLoop(_uiState.value.soundIndex)
+            } else {
+                audioPlayer.stopPomodoroLoop()
+            }
+        }
     }
 
     fun onPomodoroPresetClick(label: String, stages: List<Int>) {
@@ -639,6 +661,7 @@ open class MainViewModel(
         autoKnockJob?.cancel()
         timerJob?.cancel()
         pomodoroJob?.cancel()
+        audioPlayer.stopPomodoroLoop()
         audioPlayer.release()
     }
 }

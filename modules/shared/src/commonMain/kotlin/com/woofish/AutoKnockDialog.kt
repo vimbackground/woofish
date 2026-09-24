@@ -41,6 +41,7 @@ fun AutoKnockDialog(
     onPomodoroCustomSeqChange: (String) -> Unit = {},
     onParsePomodoroSeq: (String) -> List<Int> = { listOf(25) },
     onTogglePomodoroSound: () -> Unit = {},
+    onSoundIndexChange: (Int) -> Unit = {},
     onTempoPresetClick: (String, Int) -> Unit = { _, bpm -> onBpmChange(bpm) },
     onTempoCustomClick: () -> Unit = {},
     onSetCustomBpm: (Int) -> Unit = onBpmChange
@@ -261,33 +262,75 @@ fun AutoKnockDialog(
                             }
                         }
 
-                        // 4. 专注走针音效开关 (移至番茄钟专注设置)
+                        // 4. 专注音效设置 (移至番茄钟专注设置)
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFF242424),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "🔊 专注时钟滴答音", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text(text = "倒计时进行时播放轻柔秒针走动声", fontSize = 12.sp, color = Color.Gray)
-                                }
-                                Switch(
-                                    checked = state.isPomodoroSoundEnabled,
-                                    onCheckedChange = { onTogglePomodoroSound() },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
-                                        checkedTrackColor = Color(0xFF4CAF50),
-                                        uncheckedThumbColor = Color.Gray,
-                                        uncheckedTrackColor = Color(0xFF333333)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                        Text(text = "🔊 专注音效", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        val soundSubtitle = if (state.isPomodoroSoundEnabled) {
+                                            when (state.soundIndex) {
+                                                1 -> "倒计时进行时播放平稳舒适的专注白噪音"
+                                                2 -> "倒计时进行时播放真实舒缓的自然淅沥雨声"
+                                                else -> "倒计时进行时播放轻柔秒针走动声"
+                                            }
+                                        } else {
+                                            "未开启专注音效（静音专注）"
+                                        }
+                                        Text(text = soundSubtitle, fontSize = 12.sp, color = Color.Gray)
+                                    }
+                                    Switch(
+                                        checked = state.isPomodoroSoundEnabled,
+                                        onCheckedChange = { onTogglePomodoroSound() },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = Color(0xFF4CAF50),
+                                            uncheckedThumbColor = Color.Gray,
+                                            uncheckedTrackColor = Color(0xFF333333)
+                                        )
                                     )
-                                )
+                                }
+
+                                AnimatedVisibility(visible = state.isPomodoroSoundEnabled, modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        state.currentMode.soundNames.forEachIndexed { index, name ->
+                                            val isSelected = state.soundIndex == index
+                                            Surface(
+                                                onClick = { onSoundIndexChange(index) },
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF2A2A2A),
+                                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Box(
+                                                    contentAlignment = Alignment.Center,
+                                                    modifier = Modifier.padding(vertical = 8.dp)
+                                                ) {
+                                                    Text(
+                                                        text = name,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -525,7 +568,7 @@ fun AutoKnockDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                         Text(text = "⏱️ 自动敲击持续时间", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
@@ -551,8 +594,8 @@ fun AutoKnockDialog(
                                     )
                                 }
 
-                                AnimatedVisibility(visible = state.isTimerEnabled) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AnimatedVisibility(visible = state.isTimerEnabled, modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         // 预设时长快捷按钮
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -743,33 +786,75 @@ fun AutoKnockDialog(
                             }
                         }
 
-                        // 4. 专注走针音效开关 (移至番茄钟专注设置)
+                        // 4. 专注音效设置 (移至番茄钟专注设置)
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFF262626),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "🔊 专注时钟滴答音", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text(text = "倒计时进行时播放轻柔秒针走动声", fontSize = 11.sp, color = Color.Gray)
-                                }
-                                Switch(
-                                    checked = state.isPomodoroSoundEnabled,
-                                    onCheckedChange = { onTogglePomodoroSound() },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
-                                        checkedTrackColor = Color(0xFF4CAF50),
-                                        uncheckedThumbColor = Color.Gray,
-                                        uncheckedTrackColor = Color(0xFF333333)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                        Text(text = "🔊 专注音效", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        val soundSubtitle = if (state.isPomodoroSoundEnabled) {
+                                            when (state.soundIndex) {
+                                                1 -> "倒计时进行时播放平稳舒适的专注白噪音"
+                                                2 -> "倒计时进行时播放真实舒缓的自然淅沥雨声"
+                                                else -> "倒计时进行时播放轻柔秒针走动声"
+                                            }
+                                        } else {
+                                            "未开启专注音效（静音专注）"
+                                        }
+                                        Text(text = soundSubtitle, fontSize = 11.sp, color = Color.Gray)
+                                    }
+                                    Switch(
+                                        checked = state.isPomodoroSoundEnabled,
+                                        onCheckedChange = { onTogglePomodoroSound() },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = Color(0xFF4CAF50),
+                                            uncheckedThumbColor = Color.Gray,
+                                            uncheckedTrackColor = Color(0xFF333333)
+                                        )
                                     )
-                                )
+                                }
+
+                                AnimatedVisibility(visible = state.isPomodoroSoundEnabled, modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        state.currentMode.soundNames.forEachIndexed { index, name ->
+                                            val isSelected = state.soundIndex == index
+                                            Surface(
+                                                onClick = { onSoundIndexChange(index) },
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF303030),
+                                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Box(
+                                                    contentAlignment = Alignment.Center,
+                                                    modifier = Modifier.padding(vertical = 8.dp)
+                                                ) {
+                                                    Text(
+                                                        text = name,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -989,7 +1074,7 @@ fun AutoKnockDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                         Text(text = "⏱️ 自动敲击持续时间", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         val remM = state.timerRemainingSeconds / 60
                                         val remS = state.timerRemainingSeconds % 60
@@ -1015,8 +1100,8 @@ fun AutoKnockDialog(
                                     )
                                 }
 
-                                AnimatedVisibility(visible = state.isTimerEnabled) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AnimatedVisibility(visible = state.isTimerEnabled, modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)

@@ -56,8 +56,8 @@ jobs:
             TAG_VER="${{ github.ref_name }}"
             PURE_VER="${TAG_VER#v}"
           else
-            TAG_VER="v1.3.3"
-            PURE_VER="1.3.3"
+            TAG_VER="v1.3.4"
+            PURE_VER="1.3.4"
           fi
           APK_NAME="woofish-${PURE_VER}.apk"
           FOUND_APK=$(find _Dist/android/ modules/android/build/outputs/apk/release/ build/ -name "*.apk" 2>/dev/null | head -n 1)

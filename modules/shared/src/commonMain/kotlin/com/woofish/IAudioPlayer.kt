@@ -2,6 +2,8 @@ package com.woofish
 
 interface IAudioPlayer {
     fun playPomodoroTick()
+    fun startPomodoroLoop(soundIndex: Int) {}
+    fun stopPomodoroLoop() {}
     fun playHit(mode: AppMode, soundIndex: Int, isManual: Boolean = false, vibrationMs: Int = 120)
     fun vibrateManualKnock(durationMs: Int) {}
     fun playTimerFinishedFeedback()

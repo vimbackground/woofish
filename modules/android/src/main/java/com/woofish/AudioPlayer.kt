@@ -16,6 +16,7 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
     private val drumSounds = mutableListOf<Int>()
     private val pomodoroSounds = mutableListOf<Int>()
     private var pomodoroTickSound: Int = 0
+    private var pomodoroStreamId: Int = 0
     private var triangleSound: Int = 0
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
@@ -55,9 +56,13 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_hand, 1))
         drumSounds.add(soundPool.load(context, R.raw.sound_drum_djembe, 1))
 
-        // 4. 番茄钟专属背景轻柔秒针走动滴答音
+        // 4. 番茄钟专属专注音效 (3 种：时钟滴答、专注白噪、沉浸雨声)
         pomodoroTickSound = soundPool.load(context, R.raw.sound_pomodoro_tick, 1)
+        val whiteNoiseSound = soundPool.load(context, R.raw.sound_pomodoro_white_noise, 1)
+        val rainSound = soundPool.load(context, R.raw.sound_pomodoro_rain, 1)
         pomodoroSounds.add(pomodoroTickSound)
+        pomodoroSounds.add(whiteNoiseSound)
+        pomodoroSounds.add(rainSound)
 
         // 5. 倒计时结束真实三角铁敲击提示音
         triangleSound = soundPool.load(context, R.raw.sound_triangle, 1)
@@ -66,6 +71,24 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
     override fun playPomodoroTick() {
         if (pomodoroTickSound != 0) {
             soundPool.play(pomodoroTickSound, 0.35f, 0.35f, 1, 0, 1f)
+        }
+    }
+
+    override fun startPomodoroLoop(soundIndex: Int) {
+        stopPomodoroLoop()
+        val soundId = pomodoroSounds.getOrNull(soundIndex) ?: return
+        pomodoroStreamId = soundPool.play(soundId, 0.45f, 0.45f, 1, -1, 1f)
+    }
+
+    override fun stopPomodoroLoop() {
+        if (pomodoroStreamId != 0) {
+            try {
+                soundPool.stop(pomodoroStreamId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                pomodoroStreamId = 0
+            }
         }
     }
 
@@ -78,7 +101,8 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         }
         val safeIndex = soundIndex.coerceIn(0, (list.size - 1).coerceAtLeast(0))
         if (safeIndex in list.indices) {
-            soundPool.play(list[safeIndex], 1f, 1f, 1, 0, 1f)
+            val volume = if (mode == AppMode.POMODORO) 0.45f else 1f
+            soundPool.play(list[safeIndex], volume, volume, 1, 0, 1f)
         }
         if (isManual) {
             vibrateManualKnock(vibrationMs)
@@ -187,6 +211,7 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
     }
 
     override fun release() {
+        stopPomodoroLoop()
         soundPool.release()
         stopBgm()
     }

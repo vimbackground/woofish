@@ -119,48 +119,46 @@ fun AudioSettingsDialog(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 1. 敲击音效选择（置于背景音乐上方，非番茄钟模式显示）
-                    if (state.currentMode != AppMode.POMODORO) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF222222),
-                            modifier = Modifier.fillMaxWidth()
+                    // 1. 敲击/专注音效选择（置于背景音乐上方）
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF222222),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Text(
-                                    text = "🔊 当前模式音效选择 (${state.currentMode.displayName})",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                            Text(
+                                text = "🔊 当前模式音效选择 (${state.currentMode.displayName})",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    state.currentMode.soundNames.forEachIndexed { index, name ->
-                                        val isSelected = state.soundIndex == index
-                                        Surface(
-                                            onClick = { onSoundIndexChange(index) },
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF2A2A2A),
-                                            border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
-                                            modifier = Modifier.weight(1f)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                state.currentMode.soundNames.forEachIndexed { index, name ->
+                                    val isSelected = state.soundIndex == index
+                                    Surface(
+                                        onClick = { onSoundIndexChange(index) },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF2A2A2A),
+                                        border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.padding(vertical = 10.dp)
                                         ) {
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier = Modifier.padding(vertical = 10.dp)
-                                            ) {
-                                                Text(
-                                                    text = name,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                                )
-                                            }
+                                            Text(
+                                                text = name,
+                                                fontSize = 13.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                            )
                                         }
                                     }
                                 }
@@ -375,48 +373,46 @@ fun AudioSettingsDialog(
                         .padding(top = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 1. 敲击音效选择（置于背景音乐上方，非番茄钟模式显示）
-                    if (state.currentMode != AppMode.POMODORO) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF262626),
-                            modifier = Modifier.fillMaxWidth()
+                    // 1. 敲击/专注音效选择（置于背景音乐上方）
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF262626),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Text(
-                                    text = "🔊 模式音效选择 (${state.currentMode.displayName})",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                            Text(
+                                text = "🔊 模式音效选择 (${state.currentMode.displayName})",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    state.currentMode.soundNames.forEachIndexed { index, name ->
-                                        val isSelected = state.soundIndex == index
-                                        Surface(
-                                            onClick = { onSoundIndexChange(index) },
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF303030),
-                                            border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
-                                            modifier = Modifier.weight(1f)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                state.currentMode.soundNames.forEachIndexed { index, name ->
+                                    val isSelected = state.soundIndex == index
+                                    Surface(
+                                        onClick = { onSoundIndexChange(index) },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF303030),
+                                        border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, Color(0xFF3E3E3E)),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.padding(vertical = 8.dp)
                                         ) {
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier = Modifier.padding(vertical = 8.dp)
-                                            ) {
-                                                Text(
-                                                    text = name,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isSelected) Color.White else Color(0xFFB0B0B0)
-                                                )
-                                            }
+                                            Text(
+                                                text = name,
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                            )
                                         }
                                     }
                                 }
