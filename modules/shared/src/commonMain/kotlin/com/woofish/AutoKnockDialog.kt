@@ -624,17 +624,54 @@ fun AutoKnockDialog(
                                             }
                                         }
 
-                                        // 滑块精确调节
-                                        Slider(
-                                            value = state.timerDurationMinutes.toFloat(),
-                                            onValueChange = { onTimerDurationChange(it.roundToInt()) },
-                                            valueRange = 1f..120f,
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color.White,
-                                                activeTrackColor = Color.White,
-                                                inactiveTrackColor = Color(0xFF444444)
+                                        // 滑块精确调节与左右加减微调
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilledIconButton(
+                                                onClick = {
+                                                    if (state.timerDurationMinutes > 1) {
+                                                        onTimerDurationChange(state.timerDurationMinutes - 1)
+                                                    }
+                                                },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color(0xFF2E2E2E),
+                                                    contentColor = Color.White
+                                                ),
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Text(text = "−", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            }
+
+                                            Slider(
+                                                value = state.timerDurationMinutes.toFloat(),
+                                                onValueChange = { onTimerDurationChange(it.roundToInt()) },
+                                                valueRange = 1f..120f,
+                                                colors = SliderDefaults.colors(
+                                                    thumbColor = Color.White,
+                                                    activeTrackColor = Color.White,
+                                                    inactiveTrackColor = Color(0xFF444444)
+                                                ),
+                                                modifier = Modifier.weight(1f)
                                             )
-                                        )
+
+                                            FilledIconButton(
+                                                onClick = {
+                                                    if (state.timerDurationMinutes < 120) {
+                                                        onTimerDurationChange(state.timerDurationMinutes + 1)
+                                                    }
+                                                },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color(0xFF2E2E2E),
+                                                    contentColor = Color.White
+                                                ),
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Text(text = "+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1129,16 +1166,54 @@ fun AutoKnockDialog(
                                             }
                                         }
 
-                                        Slider(
-                                            value = state.timerDurationMinutes.toFloat(),
-                                            onValueChange = { onTimerDurationChange(it.roundToInt()) },
-                                            valueRange = 1f..120f,
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color.White,
-                                                activeTrackColor = Color.White,
-                                                inactiveTrackColor = Color(0xFF444444)
+                                        // 滑块精确调节与左右加减微调
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilledIconButton(
+                                                onClick = {
+                                                    if (state.timerDurationMinutes > 1) {
+                                                        onTimerDurationChange(state.timerDurationMinutes - 1)
+                                                    }
+                                                },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color(0xFF2E2E2E),
+                                                    contentColor = Color.White
+                                                ),
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Text(text = "−", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            }
+
+                                            Slider(
+                                                value = state.timerDurationMinutes.toFloat(),
+                                                onValueChange = { onTimerDurationChange(it.roundToInt()) },
+                                                valueRange = 1f..120f,
+                                                colors = SliderDefaults.colors(
+                                                    thumbColor = Color.White,
+                                                    activeTrackColor = Color.White,
+                                                    inactiveTrackColor = Color(0xFF444444)
+                                                ),
+                                                modifier = Modifier.weight(1f)
                                             )
-                                        )
+
+                                            FilledIconButton(
+                                                onClick = {
+                                                    if (state.timerDurationMinutes < 120) {
+                                                        onTimerDurationChange(state.timerDurationMinutes + 1)
+                                                    }
+                                                },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color(0xFF2E2E2E),
+                                                    contentColor = Color.White
+                                                ),
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Text(text = "+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
                                     }
                                 }
                             }

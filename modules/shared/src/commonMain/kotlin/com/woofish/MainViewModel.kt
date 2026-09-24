@@ -12,6 +12,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+enum class ScreenOrientationSetting(val id: String, val displayName: String) {
+    AUTO("auto", "自动旋转"),
+    PORTRAIT("portrait", "锁定竖屏"),
+    LANDSCAPE("landscape", "锁定横屏");
+
+    companion object {
+        fun fromId(id: String): ScreenOrientationSetting =
+            entries.find { it.id == id } ?: AUTO
+    }
+}
+
 data class WoodenFishUiState(
     val count: Long = 0,
     val currentMode: AppMode = AppMode.WOODEN_FISH,
@@ -33,13 +44,14 @@ data class WoodenFishUiState(
     val showAutoKnockDialog: Boolean = false,
     val beatIndex: Long = 0L, // 敲击/节拍累计索引，用于驱动受力回弹与节拍摆动动画
     val knockTrigger: Long = 0L, // 用于驱动受力回弹与节拍摆动动画
-    val vibrationMs: Int = 120, // 敲击震动强度 (0~500ms，默认120ms)
+    val vibrationMs: Int = 40, // 敲击震动强度 (0~120ms，默认40ms)
     val isTimerEnabled: Boolean = false, // 是否开启倒计时功能
     val timerDurationMinutes: Int = 15, // 倒计时设定时长 (分钟)
     val timerRemainingSeconds: Long = 15 * 60L, // 倒计时当前剩余秒数
     val timerFinishedTrigger: Long = 0L, // 倒计时结束触发标记
     val tempoActivePreset: String = "", // 节奏模式当前选中的预设或"自定义"
     val customBpm: Int = 60, // 自定义独立BPM设置值
+    val screenOrientation: ScreenOrientationSetting = ScreenOrientationSetting.AUTO, // 屏幕方向设置
     // 番茄钟专注模式专属状态
     val isPomodoroRunning: Boolean = false,
     val pomodoroStages: List<Int> = listOf(25),
@@ -68,7 +80,10 @@ open class MainViewModel(
     private val initialBpm: Int = prefs.getInt("key_bpm", 60)
     private val initialCustomBpm: Int = prefs.getInt("key_custom_bpm", 60)
     private val initialTempoPreset: String = prefs.getString("key_tempo_active_preset", "") ?: ""
-    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 120)
+    private val initialVibrationMs: Int = prefs.getInt("key_vibration_ms", 40).coerceIn(0, 120)
+    private val initialScreenOrientation: ScreenOrientationSetting = ScreenOrientationSetting.fromId(
+        prefs.getString("key_screen_orientation", ScreenOrientationSetting.AUTO.id) ?: ScreenOrientationSetting.AUTO.id
+    )
     private fun getModeTimerDuration(mode: AppMode): Int {
         val legacyMinutes = prefs.getInt("key_timer_duration_minutes", 15)
         return if (mode != AppMode.POMODORO) {
@@ -115,6 +130,7 @@ open class MainViewModel(
             timerRemainingSeconds = initialTimerMinutes * 60L,
             tempoActivePreset = initialTempoPreset,
             customBpm = initialCustomBpm,
+            screenOrientation = initialScreenOrientation,
             pomodoroCustomSequence = initialPomodoroCustomSeq,
             isPomodoroSoundEnabled = initialPomodoroSound
         )
@@ -226,12 +242,17 @@ open class MainViewModel(
     }
 
     fun updateVibrationMs(ms: Int) {
-        val safeMs = ms.coerceIn(0, 500)
+        val safeMs = ms.coerceIn(0, 120)
         _uiState.value = _uiState.value.copy(vibrationMs = safeMs)
         prefs.putInt("key_vibration_ms", safeMs)
         if (safeMs > 0) {
             audioPlayer.vibrateManualKnock(safeMs)
         }
+    }
+
+    fun setScreenOrientation(setting: ScreenOrientationSetting) {
+        _uiState.value = _uiState.value.copy(screenOrientation = setting)
+        prefs.putString("key_screen_orientation", setting.id)
     }
 
     fun setBpm(newBpm: Int) {

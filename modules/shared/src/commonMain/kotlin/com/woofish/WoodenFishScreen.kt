@@ -12,6 +12,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -108,6 +110,172 @@ fun BwPauseIcon(
     }
 }
 
+// 乐器图示组件（根据模式渲染木鱼/节拍器/电子鼓，支持物理敲击受力动效）
+@Composable
+private fun InstrumentView(
+    state: WoodenFishUiState,
+    instrumentSize: androidx.compose.ui.unit.Dp,
+    impactScale: Float,
+    impactOffsetY: Float,
+    metronomeAngle: Float,
+    onHitDown: () -> Unit,
+    onHitUp: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(instrumentSize)
+            .detectInstantTap(
+                enabled = !state.isFullScreenTapEnabled,
+                onDown = onHitDown,
+                onUp = onHitUp
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (state.currentMode == AppMode.METRONOME) {
+            // 节拍器模式：大底座纯白稳定机身
+            Image(
+                painter = painterResource(Res.drawable.ic_metronome_body),
+                contentDescription = "节拍器机身",
+                modifier = Modifier.fillMaxSize()
+            )
+            // 中间粗线条摆针，以底部支点 (0.5f, 0.74f) 为旋转中心左右乒乓摆动，严格收纳在白色区域内
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        rotationZ = metronomeAngle
+                        transformOrigin = TransformOrigin(0.5f, 0.74f)
+                    }
+            ) {
+                val pivotX = size.width * 0.5f
+                val pivotY = size.height * 0.74f
+                val topY = size.height * 0.24f
+                val strokeW = size.width * 0.022f
+                drawLine(
+                    color = Color(0xFF111111),
+                    start = Offset(pivotX, pivotY),
+                    end = Offset(pivotX, topY),
+                    strokeWidth = strokeW,
+                    cap = StrokeCap.Round
+                )
+            }
+        } else {
+            // 木鱼 / 电子鼓模式：纯白实心剪影 + 真实固态打击动效
+            Image(
+                painter = painterResource(state.currentMode.icon),
+                contentDescription = state.currentMode.displayName,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        this.scaleX = impactScale
+                        this.scaleY = impactScale
+                        this.translationY = impactOffsetY
+                    }
+            )
+        }
+    }
+}
+
+// 状态说明组件：移至下方预设按钮上方，显示当前模式副标题、番茄钟阶段标签或定时倒计时胶囊
+@Composable
+private fun StatusExplanation(
+    state: WoodenFishUiState,
+    isLandscape: Boolean,
+    onOpenAutoKnockDialog: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val subtitleText = if (state.currentMode == AppMode.POMODORO) {
+            val stageCount = state.pomodoroStages.size
+            val stageIdx = state.currentPomodoroStageIndex
+            val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
+            if (stageCount in 2..3) {
+                val stagesDurationStr = state.pomodoroStages.joinToString(" + ") { "${it}分" }
+                "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount ($stagesDurationStr)"
+            } else if (stageCount > 3) {
+                "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount (${curStageMins}分)"
+            } else {
+                "${state.subtitle} (${curStageMins}分)"
+            }
+        } else {
+            state.subtitle
+        }
+
+        Text(
+            text = subtitleText,
+            color = Color(0xFF888888),
+            fontSize = if (isLandscape) 12.5.sp else 13.5.sp,
+            fontWeight = FontWeight.Medium
+        )
+
+        // 番茄钟多阶段标签指示
+        if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                state.pomodoroStages.forEachIndexed { index, minutes ->
+                    val isCurrent = index == state.currentPomodoroStageIndex
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isCurrent) Color(0x33FFFFFF) else Color(0x14FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isCurrent) Color.White else Color(0xFF3E3E3E)
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            if (isCurrent && state.isPomodoroRunning) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(5.dp)
+                                        .background(Color.White, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
+                            Text(
+                                text = "阶段${index + 1}: ${minutes}分",
+                                color = if (isCurrent) Color.White else Color(0xFF888888),
+                                fontSize = 11.sp,
+                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 定时倒计时微光药丸胶囊
+        if (state.isTimerEnabled && state.currentMode != AppMode.POMODORO) {
+            val m = state.timerRemainingSeconds / 60
+            val s = state.timerRemainingSeconds % 60
+            val timeStr = String.format("%02d:%02d", m, s)
+            Surface(
+                onClick = onOpenAutoKnockDialog,
+                shape = RoundedCornerShape(12.dp),
+                color = if (state.isAutoKnockEnabled) Color(0x33FFFFFF) else Color(0xFF222222),
+                border = BorderStroke(
+                    1.dp,
+                    if (state.isAutoKnockEnabled) Color.White else Color(0xFF444444)
+                )
+            ) {
+                Text(
+                    text = if (state.isAutoKnockEnabled) "⏱️ 倒计时 $timeStr" else "⏱️ 定时 $timeStr (待开始)",
+                    color = if (state.isAutoKnockEnabled) Color.White else Color(0xFFB0B0B0),
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {}) {
     val state by viewModel.uiState.collectAsState()
@@ -164,7 +332,9 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
             .background(Color(0xFF111111))
             .systemBarsPadding()
     ) {
-        val isLandscape = maxWidth > maxHeight
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
+        val isLandscape = screenWidth > screenHeight
         var showModeDialog by remember { mutableStateOf(false) }
 
         // 全屏点击响应区域
@@ -305,45 +475,106 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         }
 
         // -------------------------------------------------------------
-        // 2. 大计数与文字（等宽排版稳定无抖动，支持长按清零与倒计时浮动胶囊）
+        // 2. 大计数与图示（自适应屏幕大小，横屏左右对半分，竖屏上下排布）
         // -------------------------------------------------------------
         var showResetConfirmDialog by remember { mutableStateOf(false) }
 
-        AnimatedVisibility(
-            visible = !state.isZenMode,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier
-                .then(
-                    if (isLandscape) {
-                        Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = 140.dp)
-                            .width(320.dp)
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 112.dp)
-                            .align(Alignment.TopCenter)
-                    }
-                )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = if (isLandscape) Modifier.width(320.dp) else Modifier.fillMaxWidth()
+        val counterText = if (state.currentMode == AppMode.POMODORO) {
+            val m = state.pomodoroRemainingSeconds / 60
+            val s = state.pomodoroRemainingSeconds % 60
+            String.format("%02d:%02d", m, s)
+        } else {
+            "${state.count}"
+        }
+
+        // 图示大小适当缩小并自适应屏幕高宽 (满足需求1与需求2)
+        val baseInstrumentSize = if (isLandscape) {
+            minOf(175.dp, screenHeight * 0.46f)
+        } else {
+            if (screenHeight < 700.dp) 165.dp else 190.dp
+        }
+        val instrumentSize = if (state.isZenMode) {
+            baseInstrumentSize * 1.15f
+        } else {
+            baseInstrumentSize
+        }
+
+        if (isLandscape && !state.isZenMode) {
+            // 横屏非清屏模式：左右均分对称布局 (左侧大数字，右侧图示，满足需求6)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 40.dp, bottom = 80.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val counterText = if (state.currentMode == AppMode.POMODORO) {
-                    val m = state.pomodoroRemainingSeconds / 60
-                    val s = state.pomodoroRemainingSeconds % 60
-                    String.format("%02d:%02d", m, s)
-                } else {
-                    "${state.count}"
+                // 左侧 50%：居中大计数数字
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = counterText,
+                        color = Color.White,
+                        fontSize = if (screenHeight < 400.dp) 64.sp else 74.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        style = TextStyle(
+                            fontFeatureSettings = "tnum",
+                            textAlign = TextAlign.Center
+                        ),
+                        letterSpacing = 2.sp,
+                        modifier = Modifier.pointerInput(state.count, state.currentMode) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    if (state.currentMode != AppMode.POMODORO && state.count > 0L) {
+                                        showResetConfirmDialog = true
+                                    }
+                                }
+                            )
+                        }
+                    )
                 }
 
+                // 右侧 50%：居中乐器图示
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    InstrumentView(
+                        state = state,
+                        instrumentSize = instrumentSize,
+                        impactScale = impactScale,
+                        impactOffsetY = impactOffsetY,
+                        metronomeAngle = metronomeAngle,
+                        onHitDown = {
+                            if (state.currentMode == AppMode.POMODORO) {
+                                viewModel.onPomodoroTap()
+                            } else if (state.isAutoKnockEnabled) {
+                                viewModel.toggleAutoKnock(false)
+                            } else {
+                                isTouchDown = true
+                                viewModel.onManualHit()
+                            }
+                        },
+                        onHitUp = { isTouchDown = false }
+                    )
+                }
+            }
+        } else if (!state.isZenMode) {
+            // 竖屏非清屏模式：顶部居中大数字，中央居中图示
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = if (screenHeight < 680.dp) 72.dp else 90.dp)
+                    .align(Alignment.TopCenter),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = counterText,
                     color = Color.White,
-                    fontSize = if (isLandscape) 86.sp else 76.sp,
+                    fontSize = if (screenHeight < 680.dp) 64.sp else 74.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
                     style = TextStyle(
@@ -361,98 +592,80 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         )
                     }
                 )
+            }
 
-                // 番茄钟多阶段显示 或 竖屏常规副标题
-                if (!isLandscape || state.currentMode == AppMode.POMODORO) {
-                    val subtitleText = if (state.currentMode == AppMode.POMODORO) {
-                        val stageCount = state.pomodoroStages.size
-                        val stageIdx = state.currentPomodoroStageIndex
-                        val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
-                        if (stageCount in 2..3) {
-                            val stagesDurationStr = state.pomodoroStages.joinToString(" + ") { "${it}分" }
-                            "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount ($stagesDurationStr)"
-                        } else if (stageCount > 3) {
-                            "${state.subtitle} · 阶段 ${stageIdx + 1}/$stageCount (${curStageMins}分)"
+            Box(
+                modifier = Modifier.align(Alignment.Center),
+                contentAlignment = Alignment.Center
+            ) {
+                InstrumentView(
+                    state = state,
+                    instrumentSize = instrumentSize,
+                    impactScale = impactScale,
+                    impactOffsetY = impactOffsetY,
+                    metronomeAngle = metronomeAngle,
+                    onHitDown = {
+                        if (state.currentMode == AppMode.POMODORO) {
+                            viewModel.onPomodoroTap()
+                        } else if (state.isAutoKnockEnabled) {
+                            viewModel.toggleAutoKnock(false)
                         } else {
-                            "${state.subtitle} (${curStageMins}分)"
+                            isTouchDown = true
+                            viewModel.onManualHit()
                         }
-                    } else {
-                        state.subtitle
-                    }
-
+                    },
+                    onHitUp = { isTouchDown = false }
+                )
+            }
+        } else {
+            // 清屏模式：番茄钟居中显示大时间，其他模式居中显示图示
+            if (state.currentMode == AppMode.POMODORO) {
+                val m = state.pomodoroRemainingSeconds / 60
+                val s = state.pomodoroRemainingSeconds % 60
+                val timeStr = String.format("%02d:%02d", m, s)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .detectInstantTap(
+                            enabled = !state.isFullScreenTapEnabled,
+                            onDown = { viewModel.onPomodoroTap() }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = subtitleText,
-                        color = Color(0xFF555555),
-                        fontSize = if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) 16.sp else 18.sp,
-                        fontWeight = FontWeight.Medium
+                        text = timeStr,
+                        color = Color.White,
+                        fontSize = if (isLandscape) 84.sp else (if (screenHeight < 680.dp) 68.sp else 78.sp),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        style = TextStyle(
+                            fontFeatureSettings = "tnum",
+                            textAlign = TextAlign.Center
+                        ),
+                        letterSpacing = 4.sp
                     )
-
-                    // 如果有多阶段，三阶段以内的，同时显示每阶段的时长标签，更清晰直观
-                    if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            state.pomodoroStages.forEachIndexed { index, minutes ->
-                                val isCurrent = index == state.currentPomodoroStageIndex
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (isCurrent) Color(0x33FFFFFF) else Color(0x14FFFFFF),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (isCurrent) Color.White else Color(0xFF3E3E3E)
-                                    )
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                    ) {
-                                        if (isCurrent && state.isPomodoroRunning) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(6.dp)
-                                                    .background(Color.White, CircleShape)
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                        }
-                                        Text(
-                                            text = "阶段${index + 1}: ${minutes}分",
-                                            color = if (isCurrent) Color.White else Color(0xFF888888),
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
-
-                // 状态胶囊指示器：按需求已移除番茄钟模式中间的"专注中/已暂停"胶囊，保持画面整洁
-                if (state.isTimerEnabled && state.currentMode != AppMode.POMODORO) {
-                    // 首页倒计时浮动微光药丸胶囊
-                    val m = state.timerRemainingSeconds / 60
-                    val s = state.timerRemainingSeconds % 60
-                    val timeStr = String.format("%02d:%02d", m, s)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Surface(
-                        onClick = { viewModel.toggleAutoKnockDialog(true) },
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (state.isAutoKnockEnabled) Color(0x33FFFFFF) else Color(0xFF222222),
-                        border = BorderStroke(
-                            1.dp,
-                            if (state.isAutoKnockEnabled) Color.White else Color(0xFF444444)
-                        )
-                    ) {
-                        Text(
-                            text = if (state.isAutoKnockEnabled) "⏱️ 倒计时 $timeStr" else "⏱️ 定时 $timeStr (待开始)",
-                            color = if (state.isAutoKnockEnabled) Color.White else Color(0xFFB0B0B0),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                        )
-                    }
+            } else {
+                Box(
+                    modifier = Modifier.align(Alignment.Center),
+                    contentAlignment = Alignment.Center
+                ) {
+                    InstrumentView(
+                        state = state,
+                        instrumentSize = instrumentSize,
+                        impactScale = impactScale,
+                        impactOffsetY = impactOffsetY,
+                        metronomeAngle = metronomeAngle,
+                        onHitDown = {
+                            if (state.isAutoKnockEnabled) {
+                                viewModel.toggleAutoKnock(false)
+                            } else {
+                                isTouchDown = true
+                                viewModel.onManualHit()
+                            }
+                        },
+                        onHitUp = { isTouchDown = false }
+                    )
                 }
             }
         }
@@ -485,122 +698,6 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                     }
                 }
             )
-        }
-
-        // -------------------------------------------------------------
-        // 3. 居中区域：
-        // 在番茄钟模式且清屏时：居中仅显示大字倒计时（完全不显示乐器图示，避免与数字重叠）；
-        // 其他情况下（常规模式、以及番茄钟正常显示时）：居中显示乐器图示（横屏下位于右侧）
-        // -------------------------------------------------------------
-        if (state.isZenMode && state.currentMode == AppMode.POMODORO) {
-            val m = state.pomodoroRemainingSeconds / 60
-            val s = state.pomodoroRemainingSeconds % 60
-            val timeStr = String.format("%02d:%02d", m, s)
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .detectInstantTap(
-                        enabled = !state.isFullScreenTapEnabled,
-                        onDown = {
-                            viewModel.onPomodoroTap()
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = timeStr,
-                    color = Color.White,
-                    fontSize = if (isLandscape) 100.sp else 80.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    style = TextStyle(
-                        fontFeatureSettings = "tnum",
-                        textAlign = TextAlign.Center
-                    ),
-                    letterSpacing = 4.sp
-                )
-            }
-        } else {
-            val instrumentSize = if (state.isZenMode) {
-                if (isLandscape) 250.dp else 240.dp
-            } else {
-                if (isLandscape) 240.dp else 240.dp
-            }
-            Box(
-                modifier = Modifier
-                    .size(instrumentSize)
-                    .then(
-                        if (state.isZenMode) {
-                            Modifier.align(Alignment.Center)
-                        } else if (isLandscape) {
-                            Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(end = 160.dp)
-                        } else {
-                            Modifier.align(Alignment.Center)
-                        }
-                    )
-                    .detectInstantTap(
-                        enabled = !state.isFullScreenTapEnabled,
-                        onDown = {
-                            if (state.currentMode == AppMode.POMODORO) {
-                                viewModel.onPomodoroTap()
-                            } else if (state.isAutoKnockEnabled) {
-                                viewModel.toggleAutoKnock(false)
-                            } else {
-                                isTouchDown = true
-                                viewModel.onManualHit()
-                            }
-                        },
-                        onUp = {
-                            isTouchDown = false
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (state.currentMode == AppMode.METRONOME) {
-                    // 节拍器模式：大底座纯白稳定机身
-                    Image(
-                        painter = painterResource(Res.drawable.ic_metronome_body),
-                        contentDescription = "节拍器机身",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    // 中间粗线条摆针，以底部支点 (0.5f, 0.74f) 为旋转中心左右乒乓摆动，严格收纳在白色区域内
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                rotationZ = metronomeAngle
-                                transformOrigin = TransformOrigin(0.5f, 0.74f)
-                            }
-                    ) {
-                        val pivotX = size.width * 0.5f
-                        val pivotY = size.height * 0.74f
-                        val topY = size.height * 0.24f
-                        val strokeW = size.width * 0.022f // ~5.3dp, 醒目且完全在白色机身内
-                        drawLine(
-                            color = Color(0xFF111111),
-                            start = Offset(pivotX, pivotY),
-                            end = Offset(pivotX, topY),
-                            strokeWidth = strokeW,
-                            cap = StrokeCap.Round
-                        )
-                    }
-                } else {
-                    // 木鱼 / 电子鼓模式：纯白实心剪影 + 真实固态打击动效
-                    Image(
-                        painter = painterResource(state.currentMode.icon),
-                        contentDescription = state.currentMode.displayName,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                this.scaleX = impactScale
-                                this.scaleY = impactScale
-                                this.translationY = impactOffsetY
-                            }
-                    )
-                }
-            }
         }
 
         // -------------------------------------------------------------
@@ -733,12 +830,24 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(
-                    start = if (isLandscape) 48.dp else 18.dp,
-                    end = if (isLandscape) 48.dp else 18.dp,
-                    bottom = if (isLandscape) 24.dp else 28.dp
+                    start = if (isLandscape) 32.dp else 18.dp,
+                    end = if (isLandscape) 32.dp else 18.dp,
+                    bottom = if (isLandscape) 14.dp else 26.dp
                 )
         ) {
-            if (isLandscape) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (isLandscape) 6.dp else 10.dp)
+            ) {
+                // 状态说明：移到下方预设按钮上方 (满足需求3)
+                StatusExplanation(
+                    state = state,
+                    isLandscape = isLandscape,
+                    onOpenAutoKnockDialog = { viewModel.toggleAutoKnockDialog(true) }
+                )
+
+                if (isLandscape) {
                 // 横屏模式：6个按钮排成一排
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1267,6 +1376,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 }
             }
         }
+        }
 
 
 
@@ -1606,7 +1716,9 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 },
                 text = {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         AppMode.entries.forEach { mode ->
@@ -1693,6 +1805,7 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 onDismiss = { viewModel.toggleSettingsDialog(false) },
                 onSubtitleChange = { viewModel.updateSubtitle(it) },
                 onVibrationChange = { viewModel.updateVibrationMs(it) },
+                onOrientationChange = { viewModel.setScreenOrientation(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
                 onResetCount = { viewModel.resetCount() }
             )

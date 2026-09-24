@@ -2,6 +2,7 @@ package com.woofish
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
@@ -9,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
@@ -76,6 +78,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.sharedViewModel.uiState.collectAsState()
+
+            LaunchedEffect(uiState.screenOrientation) {
+                requestedOrientation = when (uiState.screenOrientation) {
+                    ScreenOrientationSetting.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    ScreenOrientationSetting.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    ScreenOrientationSetting.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                }
+            }
+
             BackHandler(enabled = uiState.isZenMode) {
                 viewModel.sharedViewModel.toggleZenMode()
             }

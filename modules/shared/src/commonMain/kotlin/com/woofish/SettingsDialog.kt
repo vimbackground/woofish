@@ -32,6 +32,7 @@ fun SettingsContent(
     onDismiss: () -> Unit,
     onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
+    onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit
 ) {
@@ -114,7 +115,41 @@ fun SettingsContent(
                         }
                     }
 
-                    // 3. 敲击震动强度
+                    // 2. 屏幕方向设置 (自动旋转 / 锁定竖屏 / 锁定横屏)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = "屏幕方向", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ScreenOrientationSetting.entries.forEach { setting ->
+                                val isSelected = state.screenOrientation == setting
+                                Surface(
+                                    onClick = { onOrientationChange(setting) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF242424),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) Color.White else Color(0xFF444444)
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = setting.displayName,
+                                            fontSize = 12.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. 敲击震动强度 (范围 0~120ms，带两侧加减微调按钮)
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -129,17 +164,54 @@ fun SettingsContent(
                                 color = if (state.vibrationMs == 0) Color.Gray else Color.White
                             )
                         }
-                        Slider(
-                            value = state.vibrationMs.toFloat(),
-                            onValueChange = { onVibrationChange(it.toInt()) },
-                            valueRange = 0f..500f,
-                            steps = 499,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color(0xFF333333)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledIconButton(
+                                onClick = {
+                                    if (state.vibrationMs > 0) {
+                                        onVibrationChange((state.vibrationMs - 1).coerceAtLeast(0))
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF2E2E2E),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text(text = "−", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Slider(
+                                value = state.vibrationMs.toFloat(),
+                                onValueChange = { onVibrationChange(it.toInt()) },
+                                valueRange = 0f..120f,
+                                steps = 119,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color.White,
+                                    activeTrackColor = Color.White,
+                                    inactiveTrackColor = Color(0xFF333333)
+                                ),
+                                modifier = Modifier.weight(1f)
                             )
-                        )
+
+                            FilledIconButton(
+                                onClick = {
+                                    if (state.vibrationMs < 120) {
+                                        onVibrationChange((state.vibrationMs + 1).coerceAtMost(120))
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF2E2E2E),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text(text = "+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
 
@@ -269,7 +341,41 @@ fun SettingsContent(
                         }
                     }
 
-                    // 3. 敲击震动强度
+                    // 2. 屏幕方向设置 (自动旋转 / 锁定竖屏 / 锁定横屏)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = "屏幕方向", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ScreenOrientationSetting.entries.forEach { setting ->
+                                val isSelected = state.screenOrientation == setting
+                                Surface(
+                                    onClick = { onOrientationChange(setting) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0x33FFFFFF) else Color(0xFF242424),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) Color.White else Color(0xFF444444)
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = setting.displayName,
+                                            fontSize = 12.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color.White else Color(0xFFB0B0B0)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. 敲击震动强度 (范围 0~120ms，带两侧加减微调按钮)
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -284,17 +390,54 @@ fun SettingsContent(
                                 color = if (state.vibrationMs == 0) Color.Gray else Color.White
                             )
                         }
-                        Slider(
-                            value = state.vibrationMs.toFloat(),
-                            onValueChange = { onVibrationChange(it.toInt()) },
-                            valueRange = 0f..500f,
-                            steps = 499,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color(0xFF333333)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledIconButton(
+                                onClick = {
+                                    if (state.vibrationMs > 0) {
+                                        onVibrationChange((state.vibrationMs - 1).coerceAtLeast(0))
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF2E2E2E),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text(text = "−", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Slider(
+                                value = state.vibrationMs.toFloat(),
+                                onValueChange = { onVibrationChange(it.toInt()) },
+                                valueRange = 0f..120f,
+                                steps = 119,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color.White,
+                                    activeTrackColor = Color.White,
+                                    inactiveTrackColor = Color(0xFF333333)
+                                ),
+                                modifier = Modifier.weight(1f)
                             )
-                        )
+
+                            FilledIconButton(
+                                onClick = {
+                                    if (state.vibrationMs < 120) {
+                                        onVibrationChange((state.vibrationMs + 1).coerceAtMost(120))
+                                    }
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = Color(0xFF2E2E2E),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text(text = "+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
 
                     // 4. 全屏敲击模式
@@ -395,6 +538,7 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onSubtitleChange: (String) -> Unit,
     onVibrationChange: (Int) -> Unit,
+    onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
     onResetCount: () -> Unit
 ) {
@@ -404,6 +548,7 @@ fun SettingsDialog(
         onDismiss = onDismiss,
         onSubtitleChange = onSubtitleChange,
         onVibrationChange = onVibrationChange,
+        onOrientationChange = onOrientationChange,
         onFullScreenTapChange = onFullScreenTapChange,
         onResetCount = onResetCount
     )
