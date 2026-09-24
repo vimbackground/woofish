@@ -807,89 +807,125 @@ fun WoodenFishScreen(
             exit = fadeOut(tween(200)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (isLandscape) 20.dp else 76.dp)
+                .padding(bottom = if (isLandscape) 24.dp else 76.dp)
         ) {
             val isRunning = if (state.currentMode == AppMode.POMODORO) state.isPomodoroRunning else state.isAutoKnockEnabled
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 不明显文字显示当前的节奏频率或者番茄钟时间安排
-                val zenInfoText = if (state.currentMode == AppMode.POMODORO) {
-                    val stagesStr = state.pomodoroStages.joinToString("+") + strings.minuteUnit
-                    if (state.pomodoroStages.size > 1) {
-                        val stageIdx = state.currentPomodoroStageIndex
-                        val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
-                        "${strings.stageLabel(stageIdx + 1, state.pomodoroStages.size, curStageMins).substringBefore(':')} ($stagesStr)"
-                    } else {
-                        stagesStr
+                // 清屏状态下屏幕下方状态信息（多阶段时展示所有阶段并高亮当前阶段，单阶段展示如“2分钟”，其他展示如“60 BPM”）
+                if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size > 1) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        state.pomodoroStages.forEachIndexed { index, minutes ->
+                            val isCurrent = index == state.currentPomodoroStageIndex
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isCurrent) Color(0x33FFFFFF) else Color(0x14FFFFFF),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isCurrent) Color(0x99FFFFFF) else Color(0xFF383838)
+                                )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
+                                ) {
+                                    if (isCurrent && state.isPomodoroRunning) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .background(Color(0xFFEEEEEE), CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                    }
+                                    Text(
+                                        text = strings.stageLabel(index + 1, state.pomodoroStages.size, minutes),
+                                        color = if (isCurrent) Color(0xFFEEEEEE) else Color(0xFF757575),
+                                        fontSize = if (isLandscape) 11.5.sp else 11.sp,
+                                        fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
                     }
                 } else {
-                    "${state.bpm} BPM"
+                    val zenInfoText = if (state.currentMode == AppMode.POMODORO) {
+                        val singleMins = state.pomodoroStages.firstOrNull() ?: 25
+                        "$singleMins${strings.minuteUnit}"
+                    } else {
+                        "${state.bpm} BPM"
+                    }
+                    Text(
+                        text = zenInfoText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0x88FFFFFF),
+                        letterSpacing = 0.5.sp
+                    )
                 }
-                Text(
-                    text = zenInfoText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color(0x66FFFFFF),
-                    letterSpacing = 0.5.sp
-                )
 
-                Surface(
-                    shape = CircleShape,
-                    color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
-                    border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
-                    modifier = Modifier
-                        .width(148.dp)
-                        .height(50.dp)
-                        .pointerInput(isRunning, state.currentMode) {
-                            detectTapGestures(
-                                onTap = {
-                                    if (state.currentMode == AppMode.POMODORO) {
-                                        if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
-                                    } else {
-                                        viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
-                                    }
-                                },
-                                onLongPress = {
-                                    if (state.currentMode == AppMode.POMODORO) {
-                                        viewModel.restartPomodoro()
-                                    } else {
-                                        if (state.isTimerEnabled) {
-                                            viewModel.resetTimer()
+                // 竖屏清屏模式下保留暂停/继续按钮；横屏清屏状态下不显示该按钮，保持完全纯粹视野
+                if (!isLandscape) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isRunning) Color(0x33FFFFFF) else Color(0x44000000),
+                        border = BorderStroke(1.5.dp, if (isRunning) Color.White else Color(0x55AAAAAA)),
+                        modifier = Modifier
+                            .width(148.dp)
+                            .height(50.dp)
+                            .pointerInput(isRunning, state.currentMode) {
+                                detectTapGestures(
+                                    onTap = {
+                                        if (state.currentMode == AppMode.POMODORO) {
+                                            if (state.isPomodoroRunning) viewModel.pausePomodoro() else viewModel.resumePomodoro()
+                                        } else {
+                                            viewModel.toggleAutoKnock(!state.isAutoKnockEnabled)
                                         }
-                                        viewModel.toggleAutoKnock(true)
+                                    },
+                                    onLongPress = {
+                                        if (state.currentMode == AppMode.POMODORO) {
+                                            viewModel.restartPomodoro()
+                                        } else {
+                                            if (state.isTimerEnabled) {
+                                                viewModel.resetTimer()
+                                            }
+                                            viewModel.toggleAutoKnock(true)
+                                        }
+                                        if (state.vibrationMs > 0) {
+                                            viewModel.audioPlayer.vibrateManualKnock(40)
+                                        }
                                     }
-                                    if (state.vibrationMs > 0) {
-                                        viewModel.audioPlayer.vibrateManualKnock(40)
-                                    }
-                                }
-                            )
-                        }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
+                                )
+                            }
                     ) {
-                        if (isRunning) {
-                            BwPauseIcon(
-                                modifier = Modifier.size(14.dp),
-                                tint = Color.White
-                            )
-                        } else {
-                            BwPlayIcon(
-                                modifier = Modifier.size(14.dp),
-                                tint = Color(0xFFB0B0B0)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            if (isRunning) {
+                                BwPauseIcon(
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color.White
+                                )
+                            } else {
+                                BwPlayIcon(
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color(0xFFB0B0B0)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = if (isRunning) strings.pause else strings.resume,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isRunning) Color.White else Color(0xFFB0B0B0)
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = if (isRunning) strings.pause else strings.resume,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isRunning) Color.White else Color(0xFFB0B0B0)
-                        )
                     }
                 }
             }
