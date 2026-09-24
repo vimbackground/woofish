@@ -110,6 +110,68 @@ fun BwPauseIcon(
     }
 }
 
+@Composable
+fun BwSoundIcon(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    tint: Color = Color.White
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        // 喇叭主体
+        val bodyPath = Path().apply {
+            moveTo(w * 0.12f, h * 0.35f)
+            lineTo(w * 0.32f, h * 0.35f)
+            lineTo(w * 0.58f, h * 0.16f)
+            lineTo(w * 0.58f, h * 0.84f)
+            lineTo(w * 0.32f, h * 0.65f)
+            lineTo(w * 0.12f, h * 0.65f)
+            close()
+        }
+        drawPath(bodyPath, color = tint)
+
+        if (enabled) {
+            // 声波弧线 1 (内弧)
+            drawArc(
+                color = tint,
+                startAngle = -45f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(w * 0.44f, h * 0.30f),
+                size = Size(w * 0.32f, h * 0.40f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.09f, cap = StrokeCap.Round)
+            )
+            // 声波弧线 2 (外弧)
+            drawArc(
+                color = tint,
+                startAngle = -45f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(w * 0.40f, h * 0.16f),
+                size = Size(w * 0.52f, h * 0.68f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.09f, cap = StrokeCap.Round)
+            )
+        } else {
+            // 静音斜杠
+            drawLine(
+                color = tint,
+                start = Offset(w * 0.68f, h * 0.36f),
+                end = Offset(w * 0.92f, h * 0.64f),
+                strokeWidth = w * 0.09f,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = tint,
+                start = Offset(w * 0.92f, h * 0.36f),
+                end = Offset(w * 0.68f, h * 0.64f),
+                strokeWidth = w * 0.09f,
+                cap = StrokeCap.Round
+            )
+        }
+    }
+}
+
 // 乐器图示组件（根据模式渲染木鱼/节拍器/电子鼓，支持物理敲击受力动效）
 @Composable
 private fun InstrumentView(
@@ -195,32 +257,29 @@ private fun StatusExplanation(
         } else {
             state.subtitle
         }
-        val subtitleText = if (state.currentMode == AppMode.POMODORO) {
-            val stageCount = state.pomodoroStages.size
-            val stageIdx = state.currentPomodoroStageIndex
-            val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
-            val minUnit = strings.minuteUnit
-            if (stageCount in 2..3) {
-                val stagesDurationStr = state.pomodoroStages.joinToString(" + ") { "$it$minUnit" }
-                "$baseSubtitle · ${strings.stageLabel(stageIdx + 1, stageCount, curStageMins).substringBefore(':')} ($stagesDurationStr)"
-            } else if (stageCount > 3) {
-                "$baseSubtitle · ${strings.stageLabel(stageIdx + 1, stageCount, curStageMins).substringBefore(':')} ($curStageMins$minUnit)"
-            } else {
+        val isPomodoroMultiStage = state.currentMode == AppMode.POMODORO && state.pomodoroStages.size > 1
+
+        // 非多阶段番茄钟时显示副标题；多阶段番茄钟时满足需求5：提示信息只需要一行“阶段1 阶段2”
+        if (!isPomodoroMultiStage) {
+            val subtitleText = if (state.currentMode == AppMode.POMODORO) {
+                val stageIdx = state.currentPomodoroStageIndex
+                val curStageMins = state.pomodoroStages.getOrElse(stageIdx) { 25 }
+                val minUnit = strings.minuteUnit
                 "$baseSubtitle ($curStageMins$minUnit)"
+            } else {
+                baseSubtitle
             }
-        } else {
-            baseSubtitle
+
+            Text(
+                text = subtitleText,
+                color = Color(0xFF888888),
+                fontSize = if (isLandscape) 12.5.sp else 13.5.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
 
-        Text(
-            text = subtitleText,
-            color = Color(0xFF888888),
-            fontSize = if (isLandscape) 12.5.sp else 13.5.sp,
-            fontWeight = FontWeight.Medium
-        )
-
-        // 番茄钟多阶段标签指示
-        if (state.currentMode == AppMode.POMODORO && state.pomodoroStages.size in 2..3) {
+        // 番茄钟多阶段标签指示（仅一行）
+        if (isPomodoroMultiStage) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -286,7 +345,11 @@ private fun StatusExplanation(
 }
 
 @Composable
-fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {}) {
+fun WoodenFishScreen(
+    viewModel: MainViewModel,
+    onPickCustomBgm: () -> Unit = {},
+    onExitRequest: () -> Unit = {}
+) {
     val state by viewModel.uiState.collectAsState()
     val systemLocale = androidx.compose.ui.text.intl.Locale.current.language.lowercase()
     val isZh = when (state.appLanguage) {
@@ -344,15 +407,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
         label = "metronomeAngle"
     )
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscapeOrientation = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF111111))
-            .systemBarsPadding()
+            .then(
+                if (isLandscapeOrientation) Modifier else Modifier.systemBarsPadding()
+            )
     ) {
         val screenWidth = maxWidth
         val screenHeight = maxHeight
-        val isLandscape = screenWidth > screenHeight
+        val isLandscape = isLandscapeOrientation || screenWidth > screenHeight
         var showModeDialog by remember { mutableStateOf(false) }
 
         // 全屏点击响应区域
@@ -465,6 +533,20 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                         BwPlayIcon(
                             modifier = Modifier.size(16.dp),
                             tint = Color(0xFF888888)
+                        )
+                    }
+                }
+
+                // 4. 番茄钟专属音效开关（满足需求2）
+                if (state.currentMode == AppMode.POMODORO) {
+                    IconButton(
+                        onClick = { viewModel.togglePomodoroSound() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        BwSoundIcon(
+                            enabled = state.isPomodoroSoundEnabled,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (state.isPomodoroSoundEnabled) Color.White else Color(0xFF666666)
                         )
                     }
                 }
@@ -1866,7 +1948,8 @@ fun WoodenFishScreen(viewModel: MainViewModel, onPickCustomBgm: () -> Unit = {})
                 onOrientationChange = { viewModel.setScreenOrientation(it) },
                 onFullScreenTapChange = { viewModel.setFullScreenTap(it) },
                 onResetCount = { viewModel.resetCount() },
-                onLanguageChange = { viewModel.setAppLanguage(it) }
+                onLanguageChange = { viewModel.setAppLanguage(it) },
+                onExitRequest = onExitRequest
             )
         }
     }

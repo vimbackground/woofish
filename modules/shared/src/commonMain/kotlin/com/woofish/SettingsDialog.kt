@@ -35,7 +35,8 @@ fun SettingsContent(
     onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
     onLanguageChange: (AppLanguage) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
-    onResetCount: () -> Unit
+    onResetCount: () -> Unit,
+    onExitRequest: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
     var subtitleInput by remember { mutableStateOf(state.subtitle) }
@@ -336,6 +337,19 @@ fun SettingsContent(
                             Text(text = strings.wechatPay, fontSize = 11.sp, color = Color.LightGray)
                         }
                     }
+
+                    // 4. 安全退出软件
+                    OutlinedButton(
+                        onClick = onExitRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFF663333)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFFF6B6B)
+                        )
+                    ) {
+                        Text(text = strings.safeExitApp, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -610,6 +624,19 @@ fun SettingsContent(
                             textAlign = TextAlign.Center
                         )
                     }
+
+                    // 4. 安全退出软件
+                    OutlinedButton(
+                        onClick = onExitRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFF663333)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFFF6B6B)
+                        )
+                    ) {
+                        Text(text = strings.safeExitApp, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             },
             confirmButton = {
@@ -631,7 +658,8 @@ fun SettingsDialog(
     onOrientationChange: (ScreenOrientationSetting) -> Unit = {},
     onLanguageChange: (AppLanguage) -> Unit = {},
     onFullScreenTapChange: (Boolean) -> Unit,
-    onResetCount: () -> Unit
+    onResetCount: () -> Unit,
+    onExitRequest: () -> Unit = {}
 ) {
     SettingsContent(
         state = state,
@@ -642,6 +670,7 @@ fun SettingsDialog(
         onOrientationChange = onOrientationChange,
         onLanguageChange = onLanguageChange,
         onFullScreenTapChange = onFullScreenTapChange,
-        onResetCount = onResetCount
+        onResetCount = onResetCount,
+        onExitRequest = onExitRequest
     )
 }

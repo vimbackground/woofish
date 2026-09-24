@@ -17,6 +17,7 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
     private val pomodoroSounds = mutableListOf<Int>()
     private var pomodoroTickSound: Int = 0
     private var pomodoroStreamId: Int = 0
+    private var lastDrumStreamId: Int = 0
     private var triangleSound: Int = 0
     private var bgmPlayer: MediaPlayer? = null
     private var currentBgmUri: String? = null
@@ -70,14 +71,16 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
 
     override fun playPomodoroTick() {
         if (pomodoroTickSound != 0) {
-            soundPool.play(pomodoroTickSound, 0.35f, 0.35f, 1, 0, 1f)
+            soundPool.play(pomodoroTickSound, 0.70f, 0.70f, 1, 0, 1f)
         }
     }
 
     override fun startPomodoroLoop(soundIndex: Int) {
         stopPomodoroLoop()
         val soundId = pomodoroSounds.getOrNull(soundIndex) ?: return
-        pomodoroStreamId = soundPool.play(soundId, 0.45f, 0.45f, 1, -1, 1f)
+        // 白噪音 (index 1) 与沉浸雨声 (index 2) 默认音量调小至 0.18f，作为轻柔纯粹的专注背景音，避免对用户造成声音干扰
+        val volume = if (soundIndex == 1 || soundIndex == 2) 0.18f else 0.40f
+        pomodoroStreamId = soundPool.play(soundId, volume, volume, 1, -1, 1f)
     }
 
     override fun stopPomodoroLoop() {
@@ -101,8 +104,21 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
         }
         val safeIndex = soundIndex.coerceIn(0, (list.size - 1).coerceAtLeast(0))
         if (safeIndex in list.indices) {
-            val volume = if (mode == AppMode.POMODORO) 0.45f else 1f
-            soundPool.play(list[safeIndex], volume, volume, 1, 0, 1f)
+            if (mode == AppMode.DRUM) {
+                // 电子鼓单发音通道截断 (Monophonic Voice Cutoff)，防止敲击尾音重叠产生混浊与重音
+                if (lastDrumStreamId != 0) {
+                    try {
+                        soundPool.stop(lastDrumStreamId)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    lastDrumStreamId = 0
+                }
+                lastDrumStreamId = soundPool.play(list[safeIndex], 1f, 1f, 1, 0, 1f)
+            } else {
+                val volume = if (mode == AppMode.POMODORO) 0.40f else 1f
+                soundPool.play(list[safeIndex], volume, volume, 1, 0, 1f)
+            }
         }
         if (isManual) {
             vibrateManualKnock(vibrationMs)
@@ -212,6 +228,7 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
 
     override fun release() {
         stopPomodoroLoop()
+        lastDrumStreamId = 0
         soundPool.release()
         stopBgm()
     }

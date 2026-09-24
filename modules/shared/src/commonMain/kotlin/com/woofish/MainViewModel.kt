@@ -277,9 +277,10 @@ open class MainViewModel(
         if (_uiState.value.isAutoKnockEnabled) {
             autoKnockJob?.cancel()
             autoKnockJob = viewModelScope.launch {
+                delay(intervalMs)
                 while (isActive) {
                     onHit(isManual = false)
-                    delay(intervalMs)
+                    delay(_uiState.value.autoKnockIntervalMs)
                 }
             }
         }
@@ -579,8 +580,12 @@ open class MainViewModel(
         _uiState.value = _uiState.value.copy(isPomodoroSoundEnabled = next)
         prefs.putBoolean("key_pomodoro_sound_enabled", next)
         if (_uiState.value.isPomodoroRunning) {
-            if (next && _uiState.value.soundIndex != 0) {
-                audioPlayer.startPomodoroLoop(_uiState.value.soundIndex)
+            if (next) {
+                if (_uiState.value.soundIndex != 0) {
+                    audioPlayer.startPomodoroLoop(_uiState.value.soundIndex)
+                } else {
+                    audioPlayer.playPomodoroTick()
+                }
             } else {
                 audioPlayer.stopPomodoroLoop()
             }
@@ -612,10 +617,13 @@ open class MainViewModel(
         if (currentPreset == label) {
             toggleAutoKnock(!_uiState.value.isAutoKnockEnabled)
         } else {
-            setBpm(presetBpm)
+            val wasRunning = _uiState.value.isAutoKnockEnabled
             _uiState.value = _uiState.value.copy(tempoActivePreset = label)
             prefs.putString("key_tempo_active_preset", label)
-            toggleAutoKnock(true)
+            setBpm(presetBpm)
+            if (!wasRunning) {
+                toggleAutoKnock(true)
+            }
         }
     }
 
@@ -625,10 +633,13 @@ open class MainViewModel(
             toggleAutoKnock(!_uiState.value.isAutoKnockEnabled)
         } else {
             val customBpm = _uiState.value.customBpm
-            setBpm(customBpm)
+            val wasRunning = _uiState.value.isAutoKnockEnabled
             _uiState.value = _uiState.value.copy(tempoActivePreset = "自定义")
             prefs.putString("key_tempo_active_preset", "自定义")
-            toggleAutoKnock(true)
+            setBpm(customBpm)
+            if (!wasRunning) {
+                toggleAutoKnock(true)
+            }
         }
     }
 
@@ -636,12 +647,15 @@ open class MainViewModel(
         val safeBpm = newBpm.coerceIn(30, 300)
         prefs.putInt("key_custom_bpm", safeBpm)
         prefs.putString("key_tempo_active_preset", "自定义")
+        val wasRunning = _uiState.value.isAutoKnockEnabled
         _uiState.value = _uiState.value.copy(
             customBpm = safeBpm,
             tempoActivePreset = "自定义"
         )
         setBpm(safeBpm)
-        toggleAutoKnock(true)
+        if (!wasRunning) {
+            toggleAutoKnock(true)
+        }
     }
 
     fun togglePomodoro(presetLabel: String? = null, stages: List<Int>? = null) {

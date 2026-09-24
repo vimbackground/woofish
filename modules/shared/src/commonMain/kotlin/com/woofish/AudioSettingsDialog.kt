@@ -137,6 +137,38 @@ fun AudioSettingsDialog(
                                 color = Color.White
                             )
 
+                            if (state.currentMode == AppMode.POMODORO) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                        Text(
+                                            text = strings.pomodoroSoundSwitchTitle,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = strings.pomodoroSoundSwitchDesc,
+                                            fontSize = 11.5.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    Switch(
+                                        checked = state.isPomodoroSoundEnabled,
+                                        onCheckedChange = { onTogglePomodoroSound() },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = Color(0xFF444444),
+                                            uncheckedThumbColor = Color.Gray,
+                                            uncheckedTrackColor = Color(0xFF222222)
+                                        )
+                                    )
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -392,6 +424,38 @@ fun AudioSettingsDialog(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
+
+                            if (state.currentMode == AppMode.POMODORO) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                        Text(
+                                            text = strings.pomodoroSoundSwitchTitle,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = strings.pomodoroSoundSwitchDesc,
+                                            fontSize = 11.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    Switch(
+                                        checked = state.isPomodoroSoundEnabled,
+                                        onCheckedChange = { onTogglePomodoroSound() },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = Color(0xFF444444),
+                                            uncheckedThumbColor = Color.Gray,
+                                            uncheckedTrackColor = Color(0xFF222222)
+                                        )
+                                    )
+                                }
+                            }
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

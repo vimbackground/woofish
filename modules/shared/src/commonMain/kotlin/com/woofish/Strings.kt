@@ -141,6 +141,17 @@ interface AppStrings {
     val tapTempoButton: String
     val tapTempoPrompt: String
     fun tapTempoResult(bpm: Int): String
+
+    // Pomodoro Sound Switch
+    val pomodoroSoundSwitchTitle: String
+    val pomodoroSoundSwitchDesc: String
+
+    // Safe Exit Confirmation
+    val exitAppTitle: String
+    val exitAppConfirmMessage: String
+    val exitAppConfirm: String
+    val exitAppCancel: String
+    val safeExitApp: String
 }
 
 object StringsZh : AppStrings {
@@ -280,6 +291,15 @@ object StringsZh : AppStrings {
     override val tapTempoButton = "🖐️ 点击测速"
     override val tapTempoPrompt = "或跟随音乐节拍点击测速："
     override fun tapTempoResult(bpm: Int) = "轻敲测得: $bpm BPM"
+
+    override val pomodoroSoundSwitchTitle = "番茄钟专属音效"
+    override val pomodoroSoundSwitchDesc = "倒计时期间播放滴答声、白噪音或雨声专注伴音"
+
+    override val exitAppTitle = "退出应用"
+    override val exitAppConfirmMessage = "确定要退出木鱼并结束当前练习吗？"
+    override val exitAppConfirm = "退出"
+    override val exitAppCancel = "取消"
+    override val safeExitApp = "安全退出软件"
 }
 
 object StringsEn : AppStrings {
@@ -419,6 +439,15 @@ object StringsEn : AppStrings {
     override val tapTempoButton = "🖐️ Tap Tempo"
     override val tapTempoPrompt = "Or tap with rhythm to detect:"
     override fun tapTempoResult(bpm: Int) = "Tapped: $bpm BPM"
+
+    override val pomodoroSoundSwitchTitle = "Pomodoro Focus Sound"
+    override val pomodoroSoundSwitchDesc = "Play ticking, white noise or rain ambient sound during countdown"
+
+    override val exitAppTitle = "Exit App"
+    override val exitAppConfirmMessage = "Are you sure you want to exit and end your session?"
+    override val exitAppConfirm = "Exit"
+    override val exitAppCancel = "Cancel"
+    override val safeExitApp = "Exit App"
 }
 
 val LocalAppStrings = staticCompositionLocalOf<AppStrings> { StringsZh }

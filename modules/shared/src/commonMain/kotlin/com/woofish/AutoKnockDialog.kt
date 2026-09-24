@@ -164,6 +164,37 @@ fun AutoKnockDialog(
                             )
                         }
 
+                        // 1.5. 番茄钟专属音效开关
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = strings.pomodoroSoundSwitchTitle,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = strings.pomodoroSoundSwitchDesc,
+                                    fontSize = 11.5.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                            Switch(
+                                checked = state.isPomodoroSoundEnabled,
+                                onCheckedChange = { onTogglePomodoroSound() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFF444444),
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color(0xFF222222)
+                                )
+                            )
+                        }
+
                         // 2. 常用时长预设 (3x3 矩阵)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(text = strings.presetFocusDuration, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
@@ -653,6 +684,37 @@ fun AutoKnockDialog(
                                     checkedTrackColor = Color(0xFF4CAF50),
                                     uncheckedThumbColor = Color.Gray,
                                     uncheckedTrackColor = Color(0xFF333333)
+                                )
+                            )
+                        }
+
+                        // 1.5. 番茄钟专属音效开关
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = strings.pomodoroSoundSwitchTitle,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = strings.pomodoroSoundSwitchDesc,
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                            Switch(
+                                checked = state.isPomodoroSoundEnabled,
+                                onCheckedChange = { onTogglePomodoroSound() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFF444444),
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color(0xFF222222)
                                 )
                             )
                         }
