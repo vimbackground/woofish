@@ -71,15 +71,15 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
 
     override fun playPomodoroTick() {
         if (pomodoroTickSound != 0) {
-            soundPool.play(pomodoroTickSound, 0.70f, 0.70f, 1, 0, 1f)
+            soundPool.play(pomodoroTickSound, 1f, 1f, 1, 0, 1f)
         }
     }
 
     override fun startPomodoroLoop(soundIndex: Int) {
         stopPomodoroLoop()
         val soundId = pomodoroSounds.getOrNull(soundIndex) ?: return
-        // 白噪音 (index 1) 与沉浸雨声 (index 2) 默认音量调小至 0.18f，作为轻柔纯粹的专注背景音，避免对用户造成声音干扰
-        val volume = if (soundIndex == 1 || soundIndex == 2) 0.18f else 0.40f
+        // 白噪音 (index 1) 与沉浸雨声 (index 2) 默认音量调小至 0.08f，作为轻柔纯粹的专注背景音，避免对用户造成声音干扰
+        val volume = if (soundIndex == 1 || soundIndex == 2) 0.08f else 0.35f
         pomodoroStreamId = soundPool.play(soundId, volume, volume, 1, -1, 1f)
     }
 
@@ -116,7 +116,9 @@ class AudioPlayer(private val context: Context) : IAudioPlayer {
                 }
                 lastDrumStreamId = soundPool.play(list[safeIndex], 1f, 1f, 1, 0, 1f)
             } else {
-                val volume = if (mode == AppMode.POMODORO) 0.40f else 1f
+                val volume = if (mode == AppMode.POMODORO) {
+                    if (safeIndex == 1 || safeIndex == 2) 0.08f else 1f
+                } else 1f
                 soundPool.play(list[safeIndex], volume, volume, 1, 0, 1f)
             }
         }

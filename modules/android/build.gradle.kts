@@ -12,8 +12,8 @@ android {
         applicationId = "com.woofish"
         minSdk = 24
         targetSdk = 34
-        versionCode = 30
-        versionName = "1.6.1"
+        versionCode = 31
+        versionName = "1.6.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

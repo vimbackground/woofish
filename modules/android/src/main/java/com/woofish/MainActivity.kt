@@ -53,6 +53,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun hideSystemBars() {
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        insetsController.hide(WindowInsetsCompat.Type.systemBars())
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemBars()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -60,6 +74,7 @@ class MainActivity : ComponentActivity() {
             window.attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
+        hideSystemBars()
 
         audioRecorder = AndroidAudioRecorder(applicationContext) { callback ->
             permissionCallback = callback
@@ -109,16 +124,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // 需求1：横屏时要求实现全屏（自动隐藏系统状态栏与导航栏，支持轻扫短暂浮出）
-            LaunchedEffect(isLandscape) {
-                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-                insetsController.systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                if (isLandscape) {
-                    insetsController.hide(WindowInsetsCompat.Type.systemBars())
-                } else {
-                    insetsController.show(WindowInsetsCompat.Type.systemBars())
-                }
+            // 需求1：竖屏和横屏时都要全屏沉浸（不显示顶栏时间、电量等系统栏内容，完全沉浸）
+            LaunchedEffect(Unit) {
+                hideSystemBars()
             }
 
             // 需求6：防误退出安排，优先关闭弹窗或退出清屏，主界面下弹窗供用户确认退出

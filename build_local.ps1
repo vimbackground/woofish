@@ -52,7 +52,7 @@ Write-Host ""
 
 # 1. 提取版本号
 $androidGradlePath = Join-Path $PSScriptRoot "modules\android\build.gradle.kts"
-$APP_VER = "1.6.1"
+$APP_VER = "1.6.2"
 if (Test-Path $androidGradlePath) {
     $content = Get-Content $androidGradlePath -Raw
     if ($content -match 'versionName\s*=\s*"([^"]+)"') {
